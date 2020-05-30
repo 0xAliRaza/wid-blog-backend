@@ -22,10 +22,10 @@ Route::group([
 
 ], function ($router) {
 
-    Route::post('login', 'AuthController@login');
-    Route::post('logout', 'AuthController@logout');
-    Route::post('refresh', 'AuthController@refresh');
-    Route::post('me', 'AuthController@me');
-
+    Route::post('login', 'Auth\AuthController@login');
+    Route::post('logout', 'Auth\AuthController@logout');
+    Route::post('refresh', 'Auth\AuthController@refresh');
+    Route::get('me', 'Auth\AuthController@me');
 });
 
+Route::apiResource('posts', 'API\PostController')->middleware('api');
