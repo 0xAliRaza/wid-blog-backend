@@ -25,7 +25,19 @@ Route::group([
     Route::post('login', 'Auth\AuthController@login');
     Route::post('logout', 'Auth\AuthController@logout');
     Route::post('refresh', 'Auth\AuthController@refresh');
-    Route::get('me', 'Auth\AuthController@me');
+    Route::post('me', 'Auth\AuthController@me');
 });
 
-Route::apiResource('posts', 'API\PostController')->middleware('api');
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'posts'
+
+], function () {
+
+    Route::get('', 'API\PostController@index');
+    Route::post('create', 'API\PostController@store');
+    Route::put('update', 'API\PostController@update');
+    Route::delete('delete', 'API\PostController@destroy');
+});
+
+// Route::apiResource('posts', 'API\PostController')->except('show')->middleware('api');

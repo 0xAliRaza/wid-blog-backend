@@ -4,7 +4,7 @@ networks:
   widblogbackend:
 
 volumes:
-  db-widblogbackend:
+  db-laravel:
 
 services:
   nginx:
@@ -29,7 +29,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - db-widblogbackend:/var/lib/mysql
+      - db-laravel:/var/lib/mysql
     environment:
       MYSQL_DATABASE: wid_blog_backend
       MYSQL_USER: root
