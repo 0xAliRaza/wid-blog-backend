@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -20,7 +19,7 @@ Route::group([
     'middleware' => 'api',
     'prefix' => 'auth'
 
-], function ($router) {
+], function () {
 
     Route::post('login', 'Auth\AuthController@login');
     Route::post('logout', 'Auth\AuthController@logout');
@@ -39,5 +38,3 @@ Route::group([
     Route::put('update', 'API\PostController@update');
     Route::delete('delete', 'API\PostController@destroy');
 });
-
-// Route::apiResource('posts', 'API\PostController')->except('show')->middleware('api');
