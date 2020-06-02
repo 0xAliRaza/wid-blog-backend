@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\API;
 
 use App\Models\Post;
+use App\Models\User;
+use App\Traits\PostsTrait;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Traits\PostsTrait;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\Console\Input\Input;
 
 class PostController extends Controller
@@ -48,6 +50,7 @@ class PostController extends Controller
             'type_id' => 'required|integer|exists:App\Models\Type,id|max:255',
             'user_id' => 'required|integer|exists:App\Models\User,id|max:255'
         ]);
+        $this->authorize('create', [Post::class, $request]);
         $post = $this->manipulate($this->get(), $request, ['title', 'content', 'type_id', 'use_id']);
         return response()->json($post->save());
     }
@@ -68,11 +71,10 @@ class PostController extends Controller
             'type_id' => 'required|integer|exists:App\Models\Type,id|max:255',
             'user_id' => 'required|integer|exists:App\Models\User,id|max:255'
         ]);
+
         $post = $this->get((int) $request->id);
 
-        if ($post->isEmpty()) {
-            return response()->json(["message" => "Post not found in the database."], 404);
-        }
+        $this->authorize('update', [Post::class, $post, $request]);
 
         $this->manipulate($post, $request, ['title', 'content', 'type_id', 'user_id']);
         return response()->json($post->save());
@@ -90,9 +92,7 @@ class PostController extends Controller
         ]);
         $post = $this->get((int) $request->id);
 
-        if ($post->isEmpty()) {
-            return response()->json(["message" => "Post not found in the database."], 404);
-        }
+        $this->authorize('delete', [Post::class, $post]);
 
         return response()->json($post->delete());
     }
