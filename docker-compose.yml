@@ -10,6 +10,7 @@ services:
   nginx:
     image: nginx:stable-alpine
     container_name: nginx
+    restart: unless-stopped
     ports:
       - "8000:80"
     volumes:
@@ -62,6 +63,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: php
+    restart: unless-stopped
     volumes:
       - ./:/var/www/html
     ports:

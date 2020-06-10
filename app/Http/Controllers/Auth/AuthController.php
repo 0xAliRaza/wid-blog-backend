@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Auth;
 
+use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Tymon\JWTAuth\Exceptions\TokenBlacklistedException;
 
 class AuthController extends Controller
 {
@@ -15,7 +18,7 @@ class AuthController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'refresh']]);
+        $this->middleware('jwt.auth:api', ['except' => ['login', 'refresh']]);
     }
 
     /**
@@ -27,13 +30,20 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
 
-        if ($token = $this->guard()->attempt($credentials)) {
-            return $this->respondWithToken($token);
+        try {
+            $this->validate($request, [
+                "email" => "required|email",
+                "password" => "required",
+            ]);
+            $credentials = $request->only('email', 'password');
+            if ($token = $this->guard()->attempt($credentials)) {
+                return $this->respondWithUserDetails($token);
+            }
+        } catch (Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 401);
         }
-
-        return response()->json(['error' => 'Username or password is incorrect!'], 401);
+        return response()->json(['message' => 'Username or password is incorrect.'], 401);
     }
 
     /**
@@ -65,7 +75,17 @@ class AuthController extends Controller
      */
     public function refresh()
     {
-        return $this->respondWithToken($this->guard()->refresh());
+        try {
+            if ($token = $this->guard()->refresh()) {
+                // Get User by new token and return it.
+                JWTAuth::setToken($token);
+                $user = JWTAuth::toUser($token)->only(['id', 'name', 'email', 'role']);
+                $user["token"] = $token;
+                return response()->json($user);
+            }
+        } catch (Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 401);
+        }
     }
 
     /**
@@ -84,6 +104,19 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     *Get the User details along with token.
+     *
+     * @param string $token
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    protected function respondWithUserDetails($token)
+    {
+        $user = $this->guard()->userOrFail()->only(['id', 'name', 'email', 'role']);
+        $user["token"] = $token;
+        return response()->json($user);
+    }
     /**
      * Get the guard to be used during authentication.
      *

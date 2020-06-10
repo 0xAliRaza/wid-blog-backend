@@ -13,24 +13,18 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-
-Route::group([
-
-    'middleware' => 'api',
-    'prefix' => 'auth'
-
-], function () {
-
+Route::group(['prefix' => 'auth'], function () {
+    // Middleware is assigned in the Controller...
     Route::post('login', 'Auth\AuthController@login');
-    Route::post('logout', 'Auth\AuthController@logout');
     Route::post('refresh', 'Auth\AuthController@refresh');
+    Route::post('logout', 'Auth\AuthController@logout');
     Route::post('me', 'Auth\AuthController@me');
 });
 
-Route::group([
-    'middleware' => 'api',
-    'prefix' => 'posts'
 
+Route::group([
+    'middleware' => 'jwt.auth',
+    'prefix' => 'posts'
 ], function () {
 
     Route::get('', 'API\PostController@index');
