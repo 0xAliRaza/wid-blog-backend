@@ -1,28 +1,14 @@
-
-### Code ###
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-### Laravel ###
-/vendor/
-node_modules/
+/node_modules
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+.env
+.phpunit.result.cache
+.idea
+.bash_history
+Homestead.json
+Homestead.yaml
 npm-debug.log
 yarn-error.log
-
-# Laravel 4 specific
-bootstrap/compiled.php
-app/storage/
-bootstrap/cache
-# Laravel 5 & Lumen specific
-public/storage
-public/hot
-storage/*.key
-.env
-Homestead.yaml
-Homestead.json
-/.vagrant
-.phpunit.result.cache
 _ide_helper.php
