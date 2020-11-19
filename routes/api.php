@@ -24,11 +24,12 @@ Route::group(['prefix' => 'auth'], function () {
 
 Route::group([
     'middleware' => 'jwt.auth',
-    'prefix' => 'posts'
+    'prefix' => 'post'
 ], function () {
 
     Route::get('', 'API\PostController@index');
     Route::post('create', 'API\PostController@store');
     Route::put('update', 'API\PostController@update');
     Route::delete('delete', 'API\PostController@destroy');
+    Route::post('imageUpload', 'API\PostController@uploadImage');
 });

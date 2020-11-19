@@ -53,7 +53,7 @@ class AuthController extends Controller
      */
     public function me()
     {
-        return response()->json($this->guard()->user());
+        return $this->respondWithUserDetails();
     }
 
     /**
@@ -111,10 +111,12 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function respondWithUserDetails($token)
+    protected function respondWithUserDetails($token = null)
     {
         $user = $this->guard()->userOrFail()->only(['id', 'name', 'email', 'role']);
-        $user["token"] = $token;
+        if ($token) {
+            $user["token"] = $token;
+        }
         return response()->json($user);
     }
     /**

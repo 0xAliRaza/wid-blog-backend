@@ -6,6 +6,7 @@ use App\Models\Post;
 use App\Models\User;
 use App\Traits\PostsTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\Console\Input\Input;
@@ -95,5 +96,21 @@ class PostController extends Controller
         $this->authorize('delete', [Post::class, $post]);
 
         return response()->json($post->delete());
+    }
+
+
+    /**
+     * Upload an image to the server.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function uploadImage(Request $request)
+    {
+        $request->validate(
+            ['file' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5000']
+        );
+
+        $path = $request->file('file')->store('images', ['disk' => 'public']);
+        return json_encode(['location' => URL::to('/') . '/storage/' . $path]);
     }
 }
