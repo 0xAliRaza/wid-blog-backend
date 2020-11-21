@@ -26,7 +26,13 @@ class Post extends Model
         return $this->belongsTo('App\Models\User');
     }
 
-    function isEmpty() {
+    function isEmpty()
+    {
         return empty($this->getAttribute('id'));
+    }
+
+    function tags()
+    {
+        return $this->belongsToMany('App\Models\Tag');
     }
 }
