@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Models\Post;
+use App\Models\Tag;
 use App\Models\User;
 use App\Traits\PostsTrait;
 use Illuminate\Http\Request;
@@ -125,5 +126,7 @@ class PostController extends Controller
      */
     public function indexTags(Request $request)
     {
+        $tags = Tag::all();
+        return response()->json($tags);
     }
 }
