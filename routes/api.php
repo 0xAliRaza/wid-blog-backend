@@ -32,4 +32,5 @@ Route::group([
     Route::put('update', 'API\PostController@update');
     Route::delete('delete', 'API\PostController@destroy');
     Route::post('imageUpload', 'API\PostController@uploadImage');
+    Route::post('tags', 'API\PostController@indexTags');
 });

@@ -45,13 +45,16 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'title' => 'required|unique:posts|min:3|max:255',
-            'content' => 'required|min:3|max:20000',
-            'type_id' => 'required|integer|exists:App\Models\Type,id|max:255',
-            'user_id' => 'required|integer|exists:App\Models\User,id|max:255'
-        ]);
+        return response()->json($request->all());
+
+        // $request->validate([
+        //     'title' => 'required|min:3|max:255',
+        //     'html' => 'min:3|max:20000',
+        //     'type_id' => 'required|integer|exists:App\Models\Type,id|max:255',
+        //     'user_id' => 'required|integer|exists:App\Models\User,id|max:255'
+        // ]);
         $this->authorize('create', [Post::class, $request]);
+        return response()->json($request->all());
         $post = $this->manipulate($this->get(), $request, ['title', 'content', 'type_id', 'use_id']);
         return response()->json($post->save());
     }
@@ -112,5 +115,15 @@ class PostController extends Controller
 
         $path = $request->file('file')->store('images', ['disk' => 'public']);
         return json_encode(['location' => URL::to('/') . '/storage/' . $path]);
+    }
+
+
+    /**
+     * Send all the tags for post creation.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function indexTags(Request $request)
+    {
     }
 }
