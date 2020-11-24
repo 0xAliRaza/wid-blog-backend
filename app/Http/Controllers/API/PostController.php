@@ -4,13 +4,10 @@ namespace App\Http\Controllers\API;
 
 use App\Models\Post;
 use App\Models\Tag;
-use App\Models\User;
 use App\Traits\PostsTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use Symfony\Component\Console\Input\Input;
 
 class PostController extends Controller
 {
@@ -46,18 +43,45 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        return response()->json($request->all());
+        // return response()->json($request->all());
+        $request->validate([
+            'type_id' => 'required|integer|exists:App\Models\Type,id|max:255',
+            'user_id' => 'required|integer|exists:App\Models\User,id|max:255',
+            'title' => 'required|string|min:3|max:255',
+            'slug' => 'required|string|min:3|max:255',
+            'html' => 'required|string|min:3|max:30000',
+            'featured_image' => 'string|nullable|max:255',
+            'custom_excerpt' => 'string|nullable|max:4000',
+            'meta_title' => 'string|nullable|max:255',
+            'meta_description' => 'string|nullable|max:4000',
+            'featured' => 'boolean',
+            'tags' => 'required|array',
+            'tags.*.name' => 'string|max:255',
+            'tags.*.slug' => 'required_with:tags.*.name|string|max:255',
+        ]);
 
-        // $request->validate([
-        //     'title' => 'required|min:3|max:255',
-        //     'html' => 'min:3|max:20000',
-        //     'type_id' => 'required|integer|exists:App\Models\Type,id|max:255',
-        //     'user_id' => 'required|integer|exists:App\Models\User,id|max:255'
-        // ]);
         $this->authorize('create', [Post::class, $request]);
-        return response()->json($request->all());
-        $post = $this->manipulate($this->get(), $request, ['title', 'content', 'type_id', 'use_id']);
-        return response()->json($post->save());
+
+
+        $post = $this->manipulate($this->get(), $request, ['type_id', 'title', 'slug', 'html', 'featured_image', 'custom_excerpt', 'featured']);
+
+        if ($post->save()) {
+
+            $tags = [];
+
+            foreach ($request->tags as $tag) {
+                $tags[] = Tag::firstOrCreate(['name' => $tag['name']], ['slug' => $tag['slug']]);
+            }
+            $tags = collect($tags);
+            $post->tags()->sync($tags->pluck('id'));
+            
+            $post->tags = $post->tags()->get();
+            $allTags = Tag::all();
+
+            return response()->json(["post" => $post, "tags" => $allTags]);
+        }
+
+        return response()->json(["message" => "An unknown error has occurred while saving post!"], 500);
     }
 
 
