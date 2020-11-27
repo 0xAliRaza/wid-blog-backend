@@ -8,6 +8,7 @@ use App\Traits\PostsTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
+use App\Models\PostMeta;
 
 class PostController extends Controller
 {
@@ -43,6 +44,7 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
+
         // return response()->json($request->all());
         $request->validate([
             'type_id' => 'required|integer|exists:App\Models\Type,id|max:255',
@@ -63,10 +65,9 @@ class PostController extends Controller
         $this->authorize('create', [Post::class, $request]);
 
 
-        $post = $this->manipulate($this->get(), $request, ['type_id', 'title', 'slug', 'html', 'featured_image', 'custom_excerpt', 'featured']);
+        $post = $this->manipulate($this->get(), $request, ['type_id', 'title', 'html', 'featured_image', 'custom_excerpt', 'featured']);
 
-        if ($post->save()) {
-
+        if ($post->saveOrFail()) {
             $tags = [];
 
             foreach ($request->tags as $tag) {
@@ -74,8 +75,20 @@ class PostController extends Controller
             }
             $tags = collect($tags);
             $post->tags()->sync($tags->pluck('id'));
-            
+
             $post->tags = $post->tags()->get();
+
+            if (!empty($request->meta_title) || !empty($request->meta_description)) {
+                $postMeta = new PostMeta();
+                $postMeta->title = $request->meta_title;
+                $postMeta->description = $request->meta_description;
+                $postMeta->post_id = (int) $post->id;
+                $postMeta->saveOrFail();
+            }
+
+            $post->meta = $post->meta()->get();
+
+
             $allTags = Tag::all();
 
             return response()->json(["post" => $post, "tags" => $allTags]);
