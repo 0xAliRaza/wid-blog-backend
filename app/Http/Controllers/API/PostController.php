@@ -55,7 +55,7 @@ class PostController extends Controller
             'meta_title' => 'string|nullable|max:255',
             'meta_description' => 'string|nullable|max:4000',
             'featured' => 'boolean',
-            'tags' => 'required|array',
+            'tags' => 'array',
             'tags.*.name' => 'string|max:255',
             'tags.*.slug' => 'required_with:tags.*.name|string|max:255',
         ])->validate();
@@ -78,16 +78,18 @@ class PostController extends Controller
             $path = $request->file('featured_image')->store('images', ['disk' => 'public']);
             $path ? $postData->featured_image = $path : null;
         }
-        
+
         $post = $this->manipulate($this->get(), $postData, ['featured_image', 'type_id', 'title', 'html', 'custom_excerpt', 'featured']);
         if ($post->save()) {
 
-            $tags = [];
-            foreach ($postData->tags as $tag) {
-                $tags[] = Tag::firstOrCreate(['name' => $tag->name], ['slug' => $tag->slug]);
+            if (!empty($postData->tags)) {
+                $tags = [];
+                foreach ($postData->tags as $tag) {
+                    $tags[] = Tag::firstOrCreate(['name' => $tag->name], ['slug' => $tag->slug]);
+                }
+                $tags = collect($tags);
+                $post->tags()->sync($tags->pluck('id'));
             }
-            $tags = collect($tags);
-            $post->tags()->sync($tags->pluck('id'));
 
 
             if (!empty($postData->meta_title) || !empty($postData->meta_description)) {
@@ -98,7 +100,7 @@ class PostController extends Controller
                 $postMeta->saveOrFail();
             }
 
-            if(!empty($post->featured_image)) {
+            if (!empty($post->featured_image)) {
                 $post->featured_image_url = URL::to('/') . '/storage/' . $post->featured_image;
             }
 
