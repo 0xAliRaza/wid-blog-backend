@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
 use App\Models\PostMeta;
+use App\Models\Type;
+use Validator;
 
 class PostController extends Controller
 {
@@ -44,15 +46,11 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-
-        // return response()->json($request->all());
-        $request->validate([
-            'type_id' => 'required|integer|exists:App\Models\Type,id|max:255',
-            'user_id' => 'required|integer|exists:App\Models\User,id|max:255',
+        Validator::make(json_decode($request->postData, true), [
+            'status' => 'required|string|in:draft,published|max:255',
             'title' => 'required|string|min:3|max:255',
             'slug' => 'required|string|min:3|max:255',
             'html' => 'required|string|min:3|max:30000',
-            'featured_image' => 'string|nullable|max:255',
             'custom_excerpt' => 'string|nullable|max:4000',
             'meta_title' => 'string|nullable|max:255',
             'meta_description' => 'string|nullable|max:4000',
@@ -60,41 +58,60 @@ class PostController extends Controller
             'tags' => 'required|array',
             'tags.*.name' => 'string|max:255',
             'tags.*.slug' => 'required_with:tags.*.name|string|max:255',
+        ])->validate();
+        $request->validate([
+            'user_id' => 'required|exists:App\Models\User,id|max:255',
+            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5000'
         ]);
 
         $this->authorize('create', [Post::class, $request]);
 
+        $postData = json_decode($request->postData);
+        $type = Type::where('tag', $postData->status)->first();
 
-        $post = $this->manipulate($this->get(), $request, ['type_id', 'title', 'html', 'featured_image', 'custom_excerpt', 'featured']);
+        if (empty($type)) {
+            return response()->json(["message" => "An unknown internal server error has occurred."], 500);
+        }
+        $postData->type_id = $type->id;
 
-        if ($post->saveOrFail()) {
+        if ($request->hasFile('featured_image') && $request->file('featured_image')->isValid()) {
+            $path = $request->file('featured_image')->store('images', ['disk' => 'public']);
+            $path ? $postData->featured_image = $path : null;
+        }
+        
+        $post = $this->manipulate($this->get(), $postData, ['featured_image', 'type_id', 'title', 'html', 'custom_excerpt', 'featured']);
+        if ($post->save()) {
+
             $tags = [];
-
-            foreach ($request->tags as $tag) {
-                $tags[] = Tag::firstOrCreate(['name' => $tag['name']], ['slug' => $tag['slug']]);
+            foreach ($postData->tags as $tag) {
+                $tags[] = Tag::firstOrCreate(['name' => $tag->name], ['slug' => $tag->slug]);
             }
             $tags = collect($tags);
             $post->tags()->sync($tags->pluck('id'));
 
-            $post->tags = $post->tags()->get();
 
-            if (!empty($request->meta_title) || !empty($request->meta_description)) {
+            if (!empty($postData->meta_title) || !empty($postData->meta_description)) {
                 $postMeta = new PostMeta();
-                $postMeta->title = $request->meta_title;
-                $postMeta->description = $request->meta_description;
+                $postMeta->title = $postData->meta_title;
+                $postMeta->description = $postData->meta_description;
                 $postMeta->post_id = (int) $post->id;
                 $postMeta->saveOrFail();
             }
 
+            if(!empty($post->featured_image)) {
+                $post->featured_image_url = URL::to('/') . '/storage/' . $post->featured_image;
+            }
+
+            $post->tags = $post->tags()->get();
             $post->meta = $post->meta()->get();
+            $post->status = $type->tag;
 
-
-            $allTags = Tag::all();
-
-            return response()->json(["post" => $post, "tags" => $allTags]);
+            return response()->json($post);
+        } else {
+            Storage::delete($path);
+            return response()->json(["message" => "An unknown internal server error has occurred."], 500);
         }
-
-        return response()->json(["message" => "An unknown error has occurred while saving post!"], 500);
+        return response()->json(["message" => "An unknown internal server error has occurred."], 500);
     }
 
 

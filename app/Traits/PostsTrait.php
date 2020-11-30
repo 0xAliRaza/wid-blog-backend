@@ -50,16 +50,16 @@ trait PostsTrait
      * Manipulate a given post model with the provided request data
      *
      * @param Post $post
-     * @param Request $request
+     * @param $postData
      * @param array $inputs
      * @return App\Models\Post
      */
-    function manipulate(Post $post, Request $request, array $inputs)
+    function manipulate(Post $post, $postData, array $inputs)
     {
         foreach ($inputs as $input) {
-            // only set attribute if it exists in request and table
-            if ($request->has($input) && Schema::hasColumn($post->getTable(), $input)) {
-                $post->$input = $request->$input;
+            // only set attribute if it exists in request data and table
+            if (!empty($postData->$input) && Schema::hasColumn($post->getTable(), $input)) {
+                $post->$input = $postData->$input;
             }
         }
         return $post;
