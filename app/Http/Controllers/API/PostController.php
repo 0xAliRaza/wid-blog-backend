@@ -100,8 +100,12 @@ class PostController extends Controller
 
             if (!empty($postData["meta_title"]) || !empty($postData["meta_description"])) {
                 $postMeta = new PostMeta();
-                $postMeta->title = $postData["meta_title"];
-                $postMeta->description = $postData["meta_description"];
+                if (!empty($postData["meta_title"])) {
+                    $postMeta->title = $postData["meta_title"];
+                }
+                if (!empty($postData["meta_description"])) {
+                    $postMeta->description = $postData["meta_description"];
+                }
                 $postMeta->post_id = (int) $post->id;
                 $postMeta->saveOrFail();
             }
@@ -111,7 +115,7 @@ class PostController extends Controller
             }
 
             $post->tags = $post->tags()->get();
-            $post->meta = $post->meta()->get();
+            $post->meta = $post->meta()->first();
             $post->status = $type->tag;
 
             return response()->json($post);
