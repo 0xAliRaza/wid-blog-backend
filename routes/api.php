@@ -28,6 +28,8 @@ Route::group([
 ], function () {
 
     Route::get('', 'API\PostController@index');
+    Route::get('', 'API\PostController@
+    ');
     Route::post('create', 'API\PostController@store');
     Route::put('update', 'API\PostController@update');
     Route::delete('delete', 'API\PostController@destroy');

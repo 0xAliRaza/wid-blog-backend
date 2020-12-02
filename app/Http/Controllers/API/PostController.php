@@ -46,7 +46,16 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        Validator::make(json_decode($request->postData, true), [
+        $postData = [];
+        foreach ($request->all() as $key => $value) {
+            if ($key === "featured_image_file") {
+                $postData[$key] = $value;
+            } else {
+                $postData[$key] = json_decode($value);
+            }
+        }
+
+        Validator::make($postData, [
             'status' => 'required|string|in:draft,published|max:255',
             'title' => 'required|string|min:3|max:255',
             'slug' => 'required|string|min:3|max:255',
@@ -58,50 +67,47 @@ class PostController extends Controller
             'tags' => 'array',
             'tags.*.name' => 'string|max:255',
             'tags.*.slug' => 'required_with:tags.*.name|string|max:255',
-        ])->validate();
-        $request->validate([
             'user_id' => 'required|exists:App\Models\User,id|max:255',
-            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5000'
-        ]);
+            'featured_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5000'
+        ])->validate();
 
         $this->authorize('create', [Post::class, $request]);
 
-        $postData = json_decode($request->postData);
-        $type = Type::where('tag', $postData->status)->first();
+        $type = Type::where('tag', $postData["status"])->first();
 
         if (empty($type)) {
             return response()->json(["message" => "An unknown internal server error has occurred."], 500);
         }
-        $postData->type_id = $type->id;
+        $postData["type_id"] = $type->id;
 
-        if ($request->hasFile('featured_image') && $request->file('featured_image')->isValid()) {
-            $path = $request->file('featured_image')->store('images', ['disk' => 'public']);
-            $path ? $postData->featured_image = $path : null;
+        if ($request->hasFile('featured_image_file') && $request->file('featured_image_file')->isValid()) {
+            $path = $request->file('featured_image_file')->store('images', ['disk' => 'public']);
+            $path ? $postData["featured_image"] = $path : null;
         }
 
         $post = $this->manipulate($this->get(), $postData, ['featured_image', 'type_id', 'title', 'html', 'custom_excerpt', 'featured']);
         if ($post->save()) {
 
-            if (!empty($postData->tags)) {
+            if (!empty(json_decode($request->tags))) {
                 $tags = [];
-                foreach ($postData->tags as $tag) {
-                    $tags[] = Tag::firstOrCreate(['name' => $tag->name], ['slug' => $tag->slug]);
+                foreach (json_decode($request->tags) as $key => $value) {
+                    $tags[] = Tag::firstOrCreate(['name' => $value->name], ['slug' => $value->slug]);
                 }
                 $tags = collect($tags);
                 $post->tags()->sync($tags->pluck('id'));
             }
 
 
-            if (!empty($postData->meta_title) || !empty($postData->meta_description)) {
+            if (!empty($postData["meta_title"]) || !empty($postData["meta_description"])) {
                 $postMeta = new PostMeta();
-                $postMeta->title = $postData->meta_title;
-                $postMeta->description = $postData->meta_description;
+                $postMeta->title = $postData["meta_title"];
+                $postMeta->description = $postData["meta_description"];
                 $postMeta->post_id = (int) $post->id;
                 $postMeta->saveOrFail();
             }
 
             if (!empty($post->featured_image)) {
-                $post->featured_image_url = URL::to('/') . '/storage/' . $post->featured_image;
+                $post->featured_image = URL::to('/') . '/storage/' . $post->featured_image;
             }
 
             $post->tags = $post->tags()->get();

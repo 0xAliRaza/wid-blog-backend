@@ -58,8 +58,8 @@ trait PostsTrait
     {
         foreach ($inputs as $input) {
             // only set attribute if it exists in request data and table
-            if (!empty($postData->$input) && Schema::hasColumn($post->getTable(), $input)) {
-                $post->$input = $postData->$input;
+            if (!empty($postData[$input]) && Schema::hasColumn($post->getTable(), $input)) {
+                $post->$input = $postData[$input];
             }
         }
         return $post;
