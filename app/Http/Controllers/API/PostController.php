@@ -28,7 +28,7 @@ class PostController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     * Get a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
@@ -36,6 +36,25 @@ class PostController extends Controller
     {
         $posts = $this->getAll();
         return response()->json(['posts' => $posts->toArray()]);
+    }
+
+    
+    /**
+     * Get a single of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getPost(Post $post)
+    {
+        if(empty($post->id)) {
+            return response()->json(["message" => "Post not found."], 404);
+
+        }
+        $post->tags = $post->tags;
+        $post->meta = $post->meta()->first();
+        $post->status = $post->type->tag;
+
+        return response()->json($post);
     }
 
     /**
@@ -54,6 +73,7 @@ class PostController extends Controller
                 $postData[$key] = json_decode($value);
             }
         }
+
 
         Validator::make($postData, [
             'status' => 'required|string|in:draft,published|max:255',
@@ -114,7 +134,7 @@ class PostController extends Controller
                 $post->featured_image = URL::to('/') . '/storage/' . $post->featured_image;
             }
 
-            $post->tags = $post->tags()->get();
+            $post->tags = $post->tags;
             $post->meta = $post->meta()->first();
             $post->status = $type->tag;
 

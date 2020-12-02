@@ -38,9 +38,10 @@ trait PostsTrait
      */
     function get(int $pk = null): Post
     {
-        $post = Post::find($pk);
-        if (empty($post)) {
+        if (empty($pk)) {
             $post = new Post();
+        } else {
+            $post = Post::findOrFail($pk);
         }
         return $post;
     }

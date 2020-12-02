@@ -28,11 +28,10 @@ Route::group([
 ], function () {
 
     Route::get('', 'API\PostController@index');
-    Route::get('', 'API\PostController@
-    ');
     Route::post('create', 'API\PostController@store');
     Route::put('update', 'API\PostController@update');
     Route::delete('delete', 'API\PostController@destroy');
     Route::post('imageUpload', 'API\PostController@uploadImage');
     Route::get('tags', 'API\PostController@indexTags');
+    Route::get('{post}', 'API\PostController@getPost');
 });
