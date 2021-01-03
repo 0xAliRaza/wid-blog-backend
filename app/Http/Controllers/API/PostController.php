@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Models\Post;
+use Validator;
 use App\Models\Tag;
+use App\Models\Post;
+use App\Models\Type;
+use App\Models\PostMeta;
 use App\Traits\PostsTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
-use App\Models\PostMeta;
-use App\Models\Type;
-use Validator;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\Console\Input\Input;
 
 class PostController extends Controller
 {
@@ -38,7 +40,7 @@ class PostController extends Controller
         return response()->json(['posts' => $posts->toArray()]);
     }
 
-    
+
     /**
      * Get a single of the resource.
      *
@@ -46,19 +48,23 @@ class PostController extends Controller
      */
     public function getPost(Post $post)
     {
-        if(empty($post->id)) {
+        if (empty($post->id)) {
             return response()->json(["message" => "Post not found."], 404);
-
         }
         $post->tags = $post->tags;
-        $post->meta = $post->meta()->first();
+        $meta = $post->meta()->first();
+        if (!empty($meta)) {
+            $post->meta_title = $meta->title;
+            $post->meta_description = $meta->description;
+        };
         $post->status = $post->type->tag;
+        $post->featured_image = URL::to('/') . Storage::url($post->featured_image);
 
         return response()->json($post);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a resource in db.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
@@ -74,14 +80,13 @@ class PostController extends Controller
             }
         }
 
-
         Validator::make($postData, [
             'status' => 'required|string|in:draft,published|max:255',
             'title' => 'required|string|min:3|max:255',
             'slug' => 'required|string|min:3|max:255',
-            'html' => 'required|string|min:3|max:30000',
+            'html' => 'string|min:3|max:30000',
             'custom_excerpt' => 'string|nullable|max:4000',
-            'meta_title' => 'string|nullable|max:255',
+            'meta_title' => 'string|nullable|max:255|required_with:meta_description',
             'meta_description' => 'string|nullable|max:4000',
             'featured' => 'boolean',
             'tags' => 'array',
@@ -93,6 +98,17 @@ class PostController extends Controller
 
         $this->authorize('create', [Post::class, $request]);
 
+
+        if (!empty($postData['id'])) {
+            $post = $this->get($postData['id']);
+            if ($post->isEmpty()) {
+                return response()->json(["message" => "An unknown error has occurred."], 500);
+            }
+        } else {
+            $post = $this->get();
+        }
+
+
         $type = Type::where('tag', $postData["status"])->first();
 
         if (empty($type)) {
@@ -102,10 +118,15 @@ class PostController extends Controller
 
         if ($request->hasFile('featured_image_file') && $request->file('featured_image_file')->isValid()) {
             $path = $request->file('featured_image_file')->store('images', ['disk' => 'public']);
-            $path ? $postData["featured_image"] = $path : null;
+            if ($path) {
+                if (!empty($post->featured_image)) {
+                    Storage::disk('public')->delete($post->featured_image);
+                }
+                $postData["featured_image"] = $path;
+            }
         }
 
-        $post = $this->manipulate($this->get(), $postData, ['featured_image', 'type_id', 'title', 'html', 'custom_excerpt', 'featured']);
+        $post = $this->manipulate($post, $postData, ['featured_image', 'type_id', 'title', 'html', 'custom_excerpt', 'featured']);
         if ($post->save()) {
 
             if (!empty(json_decode($request->tags))) {
@@ -131,45 +152,28 @@ class PostController extends Controller
             }
 
             if (!empty($post->featured_image)) {
-                $post->featured_image = URL::to('/') . '/storage/' . $post->featured_image;
+                $post->featured_image = URL::to('/') . Storage::url($post->featured_image);
+                // $post->featured_image =  URL::to('/') . '/storage/' . $post->featured_image;
             }
 
             $post->tags = $post->tags;
-            $post->meta = $post->meta()->first();
+            $meta = $post->meta()->first();
+            if (!empty($meta)) {
+                $post->meta_title = $meta->title;
+                $post->meta_description = $meta->description;
+            };
             $post->status = $type->tag;
 
             return response()->json($post);
         } else {
-            Storage::delete($path);
+            Storage::disk('public')->delete($path);
+
             return response()->json(["message" => "An unknown internal server error has occurred."], 500);
         }
         return response()->json(["message" => "An unknown internal server error has occurred."], 500);
     }
 
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request)
-    {
-        $request->validate([
-            'id' => 'required|exists:posts|max:255',
-            'title' => 'required|unique:posts,title,' . (int) $request->id . '|min:3|max:255',
-            'content' => 'required|min:3|max:20000',
-            'type_id' => 'required|integer|exists:App\Models\Type,id|max:255',
-            'user_id' => 'required|integer|exists:App\Models\User,id|max:255'
-        ]);
-
-        $post = $this->get((int) $request->id);
-
-        $this->authorize('update', [Post::class, $post, $request]);
-
-        $this->manipulate($post, $request, ['title', 'content', 'type_id', 'user_id']);
-        return response()->json($post->save());
-    }
 
     /**
      * Remove the specified resource from storage.
