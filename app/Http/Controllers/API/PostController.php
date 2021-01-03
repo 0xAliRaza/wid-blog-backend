@@ -58,7 +58,9 @@ class PostController extends Controller
             $post->meta_description = $meta->description;
         };
         $post->status = $post->type->tag;
-        $post->featured_image = URL::to('/') . Storage::url($post->featured_image);
+        if (!empty($post->featured_image)) {
+            $post->featured_image = URL::to('/') . Storage::url($post->featured_image);
+        }
 
         return response()->json($post);
     }
@@ -139,16 +141,19 @@ class PostController extends Controller
             }
 
 
-            if (!empty($postData["meta_title"]) || !empty($postData["meta_description"])) {
+            $postMeta = $post->meta()->first();
+            if (empty($postMeta)) {
                 $postMeta = new PostMeta();
-                if (!empty($postData["meta_title"])) {
-                    $postMeta->title = $postData["meta_title"];
-                }
-                if (!empty($postData["meta_description"])) {
-                    $postMeta->description = $postData["meta_description"];
-                }
+            }
+            if (!empty($postData["meta_title"]) || !empty($postData["meta_description"])) {
+                $postMeta->title = !empty($postData["meta_title"]) ? $postData["meta_title"] : null;
+                $postMeta->description = !empty($postData["meta_description"]) ? $postData["meta_description"] : null;
                 $postMeta->post_id = (int) $post->id;
                 $postMeta->saveOrFail();
+            } else {
+                if ($postMeta->exists) {
+                    $postMeta->delete();
+                }
             }
 
             if (!empty($post->featured_image)) {
