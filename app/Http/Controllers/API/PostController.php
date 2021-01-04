@@ -58,9 +58,6 @@ class PostController extends Controller
             $post->meta_description = $meta->description;
         };
         $post->status = $post->type->tag;
-        if (!empty($post->featured_image)) {
-            $post->featured_image = URL::to('/') . Storage::url($post->featured_image);
-        }
 
         return response()->json($post);
     }
@@ -95,7 +92,8 @@ class PostController extends Controller
             'tags.*.name' => 'string|max:255',
             'tags.*.slug' => 'required_with:tags.*.name|string|max:255',
             'user_id' => 'required|exists:App\Models\User,id|max:255',
-            'featured_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5000'
+            'featured_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5000',
+            'featured_image' => 'nullable|string|max:255'
         ])->validate();
 
         $this->authorize('create', [Post::class, $request]);
@@ -126,6 +124,9 @@ class PostController extends Controller
                 }
                 $postData["featured_image"] = $path;
             }
+        } elseif (empty($postData["featured_image"]) && $post->exists && Storage::disk('public')->exists($post->featured_image)) {
+            Storage::disk('public')->delete($post->featured_image);
+            $post->featured_image = null;
         }
 
         $post = $this->manipulate($post, $postData, ['featured_image', 'type_id', 'title', 'html', 'custom_excerpt', 'featured']);
@@ -156,10 +157,7 @@ class PostController extends Controller
                 }
             }
 
-            if (!empty($post->featured_image)) {
-                $post->featured_image = URL::to('/') . Storage::url($post->featured_image);
-                // $post->featured_image =  URL::to('/') . '/storage/' . $post->featured_image;
-            }
+
 
             $post->tags = $post->tags;
             $meta = $post->meta()->first();
