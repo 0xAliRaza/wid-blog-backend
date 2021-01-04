@@ -139,6 +139,8 @@ class PostController extends Controller
                 }
                 $tags = collect($tags);
                 $post->tags()->sync($tags->pluck('id'));
+            } elseif ($post->exists) {
+                $post->tags()->sync([]);
             }
 
 
