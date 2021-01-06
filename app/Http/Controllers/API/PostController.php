@@ -11,6 +11,7 @@ use App\Traits\PostsTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
+use Cviebrock\EloquentSluggable\Services\SlugService;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Console\Input\Input;
 
@@ -112,7 +113,7 @@ class PostController extends Controller
         $type = Type::where('tag', $postData["status"])->first();
 
         if (empty($type)) {
-            return response()->json(["message" => "An unknown internal server error has occurred."], 500);
+            return response()->json(["message" => "An unknown error has occurred."], 500);
         }
         $postData["type_id"] = $type->id;
 
@@ -130,6 +131,7 @@ class PostController extends Controller
         }
 
         $post = $this->manipulate($post, $postData, ['featured_image', 'type_id', 'title', 'html', 'custom_excerpt', 'featured']);
+        $post->slug = SlugService::createSlug($post, "slug", $postData["slug"]);
         if ($post->save()) {
 
             if (!empty(json_decode($request->tags))) {
