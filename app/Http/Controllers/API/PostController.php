@@ -73,10 +73,11 @@ class PostController extends Controller
     {
         $postData = [];
         foreach ($request->all() as $key => $value) {
-            if ($key === "featured_image_file") {
-                $postData[$key] = $value;
+            $decodedValue = json_decode($value);
+            if (json_last_error() == JSON_ERROR_NONE) {
+                $postData[$key] = $decodedValue;
             } else {
-                $postData[$key] = json_decode($value);
+                $postData[$key] = $value;
             }
         }
 
