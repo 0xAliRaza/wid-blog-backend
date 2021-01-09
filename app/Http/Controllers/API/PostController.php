@@ -101,48 +101,69 @@ class PostController extends Controller
         $this->authorize('create', [Post::class, $request]);
 
 
+        // Get existing post if request has post_id
         if (!empty($postData['id'])) {
+
             $post = $this->get($postData['id']);
+
             if ($post->isEmpty()) {
                 return response()->json(["message" => "An unknown error has occurred."], 500);
             }
         } else {
+
+            // Create new post
             $post = $this->get();
         }
 
 
+        // Get post type
         $type = Type::where('tag', $postData["status"])->first();
-
         if (empty($type)) {
             return response()->json(["message" => "An unknown error has occurred."], 500);
         }
         $postData["type_id"] = $type->id;
 
-        if ($request->hasFile('featured_image_file') && $request->file('featured_image_file')->isValid()) {
+
+        if (
+            $request->hasFile('featured_image_file') &&
+            $request->file('featured_image_file')->isValid()
+        ) {
+            // Store new featured image
             $path = $request->file('featured_image_file')->store('images', ['disk' => 'public']);
             if ($path) {
                 if (!empty($post->featured_image)) {
+                    // Delete existing featured image
                     Storage::disk('public')->delete($post->featured_image);
                 }
                 $postData["featured_image"] = $path;
             }
-        } elseif (empty($postData["featured_image"]) && $post->exists && Storage::disk('public')->exists($post->featured_image)) {
+        } elseif (
+            empty($postData["featured_image"]) &&
+            $post->exists &&
+            Storage::disk('public')->exists($post->featured_image)
+        ) {
+            // Delete existing featured image if no input or file present in request
             Storage::disk('public')->delete($post->featured_image);
             $post->featured_image = null;
         }
 
         $post = $this->manipulate($post, $postData, ['featured_image', 'type_id', 'title', 'html', 'custom_excerpt', 'featured']);
+
+        // Generate unique slug
         $post->slug = SlugService::createSlug($post, "slug", $postData["slug"]);
+
         if ($post->save()) {
 
-            if (!empty(json_decode($request->tags))) {
+            if (!empty($postData['tags'])) {
+                // Syncing existing and new tags to post model
                 $tags = [];
-                foreach (json_decode($request->tags) as $key => $value) {
+                foreach ($postData['tags'] as $key => $value) {
                     $tags[] = Tag::firstOrCreate(['name' => $value->name], ['slug' => $value->slug]);
                 }
                 $tags = collect($tags);
                 $post->tags()->sync($tags->pluck('id'));
-            } elseif ($post->exists) {
+            } else {
+                // Removing all tags if tags[] not present in request
                 $post->tags()->sync([]);
             }
 
@@ -152,31 +173,34 @@ class PostController extends Controller
                 $postMeta = new PostMeta();
             }
             if (!empty($postData["meta_title"]) || !empty($postData["meta_description"])) {
+                // Settings meta title and meta description
                 $postMeta->title = !empty($postData["meta_title"]) ? $postData["meta_title"] : null;
                 $postMeta->description = !empty($postData["meta_description"]) ? $postData["meta_description"] : null;
                 $postMeta->post_id = (int) $post->id;
                 $postMeta->saveOrFail();
             } else {
                 if ($postMeta->exists) {
+                    // Removing existing meta data if not present in request
                     $postMeta->delete();
                 }
             }
 
-
-
-            $post->tags = $post->tags;
             $meta = $post->meta()->first();
             if (!empty($meta)) {
+                // Setting meta data to as model prop for response
                 $post->meta_title = $meta->title;
                 $post->meta_description = $meta->description;
             };
+
+            // Setting other data
+            $post->tags = $post->tags;
             $post->status = $type->tag;
 
             return response()->json($post);
         } else {
-            Storage::disk('public')->delete($path);
 
-            return response()->json(["message" => "An unknown internal server error has occurred."], 500);
+            // Delete featured image if post model failed to save
+            Storage::disk('public')->delete($path);
         }
         return response()->json(["message" => "An unknown internal server error has occurred."], 500);
     }
