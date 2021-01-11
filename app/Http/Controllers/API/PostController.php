@@ -35,10 +35,14 @@ class PostController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $posts = $this->getAll();
-        return response()->json(['posts' => $posts->toArray()]);
+        $per_page = $request->per_page ? (int)$request->per_page : 10;
+        $posts = Post::paginate($per_page, ['id', 'title', 'featured', 'created_at', 'updated_at', 'type_id']);
+        foreach ($posts as $post) {
+            $post->type = $post->type;
+        }
+        return response()->json($posts);
     }
 
 
