@@ -95,8 +95,8 @@ class PostController extends Controller
             'meta_description' => 'string|nullable|max:4000',
             'featured' => 'boolean',
             'tags' => 'array',
-            'tags.*.name' => 'string|max:255',
-            'tags.*.slug' => 'required_with:tags.*.name|string|max:255',
+            'tags[*]name' => 'string|max:255',
+            'tags[*]slug' => 'required_with:tags.*.name|string|max:255',
             'user_id' => 'required|exists:App\Models\User,id|max:255',
             'featured_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5000',
             'featured_image' => 'nullable|string|max:255'
