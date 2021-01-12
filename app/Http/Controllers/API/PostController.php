@@ -37,8 +37,20 @@ class PostController extends Controller
      */
     public function index(Request $request)
     {
-        $per_page = $request->per_page ? (int)$request->per_page : 10;
-        $posts = Post::paginate($per_page, ['id', 'title', 'featured', 'created_at', 'updated_at', 'type_id']);
+
+        $request->validate([
+            'per_page' => 'numeric|max:255',
+            'type' => 'string|exists:App\Models\Type,tag|max:255'
+        ]);
+
+        $per_page = $request->filled('per_page') ? (int)$request->per_page : 10;
+        $type = $request->filled('type') ? Type::where('tag', $request->type)->first() : null;
+
+        if ($type) {
+            $posts = $type->posts()->paginate($per_page, ['id', 'title', 'featured', 'created_at', 'updated_at', 'type_id']);
+        } else {
+            $posts = Post::paginate($per_page, ['id', 'title', 'featured', 'created_at', 'updated_at', 'type_id']);
+        }
         foreach ($posts as $post) {
             $post->type = $post->type;
         }
@@ -151,7 +163,7 @@ class PostController extends Controller
             $post->featured_image = null;
         }
 
-        $post = $this->manipulate($post, $postData, ['featured_image', 'type_id', 'title', 'html', 'custom_excerpt', 'featured']);
+        $post = $this->manipulate($post, $postData, ['featured_image', 'type_id', 'title', 'html', 'custom_excerpt', 'featured', 'user_id']);
 
         // Generate unique slug
         $post->slug = SlugService::createSlug($post, "slug", $postData["slug"]);
@@ -182,11 +194,9 @@ class PostController extends Controller
                 $postMeta->description = !empty($postData["meta_description"]) ? $postData["meta_description"] : null;
                 $postMeta->post_id = (int) $post->id;
                 $postMeta->saveOrFail();
-            } else {
-                if ($postMeta->exists) {
-                    // Removing existing meta data if not present in request
-                    $postMeta->delete();
-                }
+            } elseif ($postMeta->exists) {
+                // Removing existing meta data if not present in request
+                $postMeta->delete();
             }
 
             $meta = $post->meta()->first();
