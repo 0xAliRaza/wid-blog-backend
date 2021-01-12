@@ -20,7 +20,7 @@ class CreatePostMetasTable extends Migration
             $table->text('description')->nullable();
             $table->timestamps();
 
-            $table->foreign('post_id')->references('id')->on('posts');
+            $table->foreign('post_id')->references('id')->on('posts')->onDelete('cascade');
         });
     }
 

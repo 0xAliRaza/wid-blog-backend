@@ -65,7 +65,7 @@ class PostController extends Controller
      */
     public function getPost(Post $post)
     {
-        if (empty($post->id)) {
+        if (!$post->exists) {
             return response()->json(["message" => "Post not found."], 404);
         }
         $post->tags = $post->tags;
@@ -226,14 +226,13 @@ class PostController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Request $request)
+    public function destroy(Post $post)
     {
-        $request->validate([
-            'id' => 'required|exists:posts|max:255',
-        ]);
-        $post = $this->get((int) $request->id);
-
         $this->authorize('delete', [Post::class, $post]);
+
+        if (Storage::disk('public')->exists($post->featured_image)) {
+            Storage::disk('public')->delete($post->featured_image);
+        }
 
         return response()->json($post->delete());
     }

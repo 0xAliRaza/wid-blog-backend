@@ -29,8 +29,8 @@ Route::group([
 
     Route::get('', 'API\PostController@index');
     Route::post('create', 'API\PostController@store');
-    Route::delete('delete', 'API\PostController@destroy');
     Route::post('imageUpload', 'API\PostController@uploadImage');
     Route::get('tags', 'API\PostController@indexTags');
+    Route::delete('{post}', 'API\PostController@destroy');
     Route::get('{post}', 'API\PostController@getPost');
 });
