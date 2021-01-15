@@ -9,6 +9,20 @@ class Post extends Model
 {
     use Sluggable;
 
+
+    protected $attributes = ['html' => null, 'custom_excerpt' => null, 'featured' => 0, 'featured_image' => null];
+
+    /**
+     * The attributes that should be cast to native types.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'featured' => 'boolean',
+    ];
+
+
+
     /**
      * Get the associated type model
      *
@@ -44,6 +58,11 @@ class Post extends Model
         return $this->hasOne('App\Models\PostMeta');
     }
 
+    function isPublished(): bool
+    {
+        return !empty($this->type->tag) && $this->type->tag === "published";
+    }
+
 
     /**
      * Return the sluggable configuration array for this model.
@@ -58,5 +77,4 @@ class Post extends Model
             ]
         ];
     }
-
 }

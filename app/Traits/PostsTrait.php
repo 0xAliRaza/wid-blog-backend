@@ -1,9 +1,8 @@
 <?php
+
 namespace App\Traits;
+
 use App\Models\Post;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -48,21 +47,20 @@ trait PostsTrait
 
 
     /**
-     * Manipulate a given post model with the provided request data
-     *
-     * @param Post $post
-     * @param $postData
-     * @param array $inputs
-     * @return App\Models\Post
+     * @param array $arr
+     * @return array
      */
-    function manipulate(Post $post, $postData, array $inputs)
+    function decode_json_array(array $arr): array
     {
-        foreach ($inputs as $input) {
-            // only set attribute if it exists in request data and table
-            if (!empty($postData[$input]) && Schema::hasColumn($post->getTable(), $input)) {
-                $post->$input = $postData[$input];
+        $newArray = [];
+        foreach ($arr as $key => $value) {
+            $decodedValue = json_decode($value);
+            if (json_last_error() == JSON_ERROR_NONE) {
+                $newArray[$key] = $decodedValue;
+            } else {
+                $newArray[$key] = $value;
             }
         }
-        return $post;
+        return $newArray;
     }
 }

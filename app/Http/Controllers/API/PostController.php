@@ -18,6 +18,24 @@ use Symfony\Component\Console\Input\Input;
 class PostController extends Controller
 {
 
+    const  POST_VALIDATION_RULES = [
+        'user_id' => 'required|exists:App\Models\User,id|max:255',
+        'published' => 'required|boolean',
+        'title' => 'required|string|min:3|max:255',
+        'slug' => 'required|string|min:3|max:255',
+        'html' => 'nullable|string|min:3|max:30000',
+        'custom_excerpt' => 'nullable|string|max:4000',
+        'meta_title' => 'nullable|string|max:255|required_with:meta_description',
+        'meta_description' => 'nullable|string|max:4000',
+        'featured' => 'boolean',
+        'tags' => 'nullable|array',
+        'tags[*]name' => 'string|max:255',
+        'tags[*]slug' => 'required_with:tags[*]name|string|max:255',
+        'featured_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5000',
+        'featured_image' => 'nullable|string|max:255'
+    ];
+
+
     use PostsTrait;
 
     /**
@@ -52,7 +70,8 @@ class PostController extends Controller
             $posts = Post::paginate($per_page, ['id', 'title', 'featured', 'created_at', 'updated_at', 'type_id']);
         }
         foreach ($posts as $post) {
-            $post->type = $post->type;
+            $post->published = $post->isPublished();
+            unset($post->type);
         }
         return response()->json($posts);
     }
@@ -69,15 +88,19 @@ class PostController extends Controller
             return response()->json(["message" => "Post not found."], 404);
         }
         $post->tags = $post->tags;
-        $meta = $post->meta()->first();
-        if (!empty($meta)) {
-            $post->meta_title = $meta->title;
-            $post->meta_description = $meta->description;
-        };
-        $post->status = $post->type->tag;
+        $meta = $post->meta;
+
+        $post->meta_description = !empty($meta->description) ? $meta->description : null;
+        $post->meta_title = !empty($meta->title) ? $meta->title : null;
+        $post->published = $post->isPublished();
+        unset($post->meta);
+        unset($post->type);
 
         return response()->json($post);
     }
+
+
+
 
     /**
      * Store a resource in db.
@@ -87,58 +110,113 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        $postData = [];
-        foreach ($request->all() as $key => $value) {
-            $decodedValue = json_decode($value);
-            if (json_last_error() == JSON_ERROR_NONE) {
-                $postData[$key] = $decodedValue;
-            } else {
-                $postData[$key] = $value;
-            }
-        }
+        $postData = $this->decode_json_array($request->all());
 
-        Validator::make($postData, [
-            'status' => 'required|string|in:draft,published|max:255',
-            'title' => 'required|string|min:3|max:255',
-            'slug' => 'required|string|min:3|max:255',
-            'html' => 'string|min:3|max:30000',
-            'custom_excerpt' => 'string|nullable|max:4000',
-            'meta_title' => 'string|nullable|max:255|required_with:meta_description',
-            'meta_description' => 'string|nullable|max:4000',
-            'featured' => 'boolean',
-            'tags' => 'array',
-            'tags[*]name' => 'string|max:255',
-            'tags[*]slug' => 'required_with:tags.*.name|string|max:255',
-            'user_id' => 'required|exists:App\Models\User,id|max:255',
-            'featured_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5000',
-            'featured_image' => 'nullable|string|max:255'
-        ])->validate();
+        Validator::make($postData, self::POST_VALIDATION_RULES)->validate();
 
         $this->authorize('create', [Post::class, $request]);
 
 
-        // Get existing post if request has post_id
-        if (!empty($postData['id'])) {
+        // Get post type
+        $type = Type::where('tag', $postData["published"] ? "published" : "draft")->first();
+        if (empty($type)) {
+            return $this->unknownErrorResponse();
+        }
 
-            $post = $this->get($postData['id']);
+        $post = $this->get();
+        $post->type_id = $type->id;
+        $post->title = $postData["title"];
+        $post->html = $postData["html"] ?? null;
+        $post->custom_excerpt = $postData["custom_excerpt"] ?? null;
+        $post->featured = $postData["featured"] ?? false;
+        $post->user_id = $postData["user_id"];
 
-            if ($post->isEmpty()) {
-                return response()->json(["message" => "An unknown error has occurred."], 500);
+
+        if (
+            $request->hasFile('featured_image_file') &&
+            $request->file('featured_image_file')->isValid()
+        ) {
+            // Store new featured image
+            $path = $request->file('featured_image_file')->store('images', ['disk' => 'public']);
+            if ($path) {
+                $post->featured_image = $path;
             }
+        }
+
+        // Generate unique slug
+        $post->slug = SlugService::createSlug($post, "slug", $postData["slug"]);
+
+        if ($post->save()) {
+
+            $this->syncPostTags($post, !empty($postData['tags']) ? $postData['tags'] : []);
+
+
+
+            $post->meta_title = null;
+            $post->meta_description = null;
+            if (!empty($postData["meta_title"])) {
+                // Settings meta title and meta description
+                $postMeta = new PostMeta();
+                $postMeta->title = $postData["meta_title"];
+                $postMeta->description = $postData["meta_description"] ?? null;
+                $postMeta->post_id = $post->id;
+                if ($postMeta->save()) {
+                    // Setting meta data to as model prop for response
+                    $post->meta_title = $postMeta->title;
+                    $post->meta_description = $postMeta->description;
+                };
+            }
+
+
+
+            // Setting other data
+            $post->tags = $post->tags;
+            $post->published = $type->tag === "published" ? true : false;
+            unset($post->type_id);
+            return response()->json($post);
         } else {
 
-            // Create new post
-            $post = $this->get();
+            // Delete featured image if post model failed to save
+            Storage::disk('public')->delete($path);
         }
+        return $this->unknownErrorResponse();
+    }
 
+
+    /**
+     * Update existing post.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request)
+    {
+
+
+
+        $rules = self::POST_VALIDATION_RULES;
+        $rules['id'] = 'required|exists:App\Models\Post,id|max:255';
+        $postData = $this->decode_json_array($request->all());
+        Validator::make($postData, $rules)->validate();
+
+        $post = $this->get($postData['id']);
+
+        if (!$post->exists) {
+            return $this->unknownErrorResponse();
+        }
+        $this->authorize('update', [$post, $request]);
 
         // Get post type
-        $type = Type::where('tag', $postData["status"])->first();
+        $type = Type::where('tag', $postData["published"] ? "published" : "draft")->first();
         if (empty($type)) {
-            return response()->json(["message" => "An unknown error has occurred."], 500);
+            return $this->unknownErrorResponse();
         }
-        $postData["type_id"] = $type->id;
-
+        $post->type_id = $type->id;
+        $post->title = $postData["title"];
+        $post->html = $postData["html"] ?? null;
+        $post->custom_excerpt = $postData["custom_excerpt"] ?? null;
+        $post->featured = $postData["featured"] ?? false;
+        $post->user_id = $postData["user_id"];
 
         if (
             $request->hasFile('featured_image_file') &&
@@ -151,74 +229,84 @@ class PostController extends Controller
                     // Delete existing featured image
                     Storage::disk('public')->delete($post->featured_image);
                 }
-                $postData["featured_image"] = $path;
+                $post->featured_image = $path;
             }
         } elseif (
-            empty($postData["featured_image"]) &&
-            $post->exists &&
-            Storage::disk('public')->exists($post->featured_image)
+            empty($postData["featured_image"])
         ) {
             // Delete existing featured image if no input or file present in request
             Storage::disk('public')->delete($post->featured_image);
             $post->featured_image = null;
         }
 
-        $post = $this->manipulate($post, $postData, ['featured_image', 'type_id', 'title', 'html', 'custom_excerpt', 'featured', 'user_id']);
 
         // Generate unique slug
         $post->slug = SlugService::createSlug($post, "slug", $postData["slug"]);
 
         if ($post->save()) {
 
-            if (!empty($postData['tags'])) {
-                // Syncing existing and new tags to post model
-                $tags = [];
-                foreach ($postData['tags'] as $key => $value) {
-                    $tags[] = Tag::firstOrCreate(['name' => $value->name], ['slug' => $value->slug]);
-                }
-                $tags = collect($tags);
-                $post->tags()->sync($tags->pluck('id'));
-            } else {
-                // Removing all tags if tags[] not present in request
-                $post->tags()->sync([]);
-            }
+            $this->syncPostTags($post, !empty($postData['tags']) ? $postData['tags'] : []);
 
 
-            $postMeta = $post->meta()->first();
-            if (empty($postMeta)) {
-                $postMeta = new PostMeta();
-            }
-            if (!empty($postData["meta_title"]) || !empty($postData["meta_description"])) {
+            if (!empty($postData["meta_title"])) {
                 // Settings meta title and meta description
-                $postMeta->title = !empty($postData["meta_title"]) ? $postData["meta_title"] : null;
-                $postMeta->description = !empty($postData["meta_description"]) ? $postData["meta_description"] : null;
-                $postMeta->post_id = (int) $post->id;
-                $postMeta->saveOrFail();
-            } elseif ($postMeta->exists) {
+                $postMeta = $post->meta ?? new PostMeta();
+                $postMeta->title = $postData["meta_title"];
+                $postMeta->description = $postData["meta_description"] ?? null;
+                $postMeta->post_id = $post->id;
+                $postMeta->save();
+                $post->meta_title = $postMeta->title;
+                $post->meta_description = $postMeta->description;
+            } else {
                 // Removing existing meta data if not present in request
-                $postMeta->delete();
+                $postMeta = $post->meta;
+                if ($postMeta) {
+                    $postMeta->delete();
+                }
+                $post->meta_title = null;
+                $post->meta_description = null;
             }
-
-            $meta = $post->meta()->first();
-            if (!empty($meta)) {
-                // Setting meta data to as model prop for response
-                $post->meta_title = $meta->title;
-                $post->meta_description = $meta->description;
-            };
 
             // Setting other data
             $post->tags = $post->tags;
-            $post->status = $type->tag;
+            $post->published = $type->tag === "published" ? true : false;
+            unset($post->type_id);
 
             return response()->json($post);
         } else {
-
             // Delete featured image if post model failed to save
             Storage::disk('public')->delete($path);
         }
-        return response()->json(["message" => "An unknown internal server error has occurred."], 500);
+        return $this->unknownErrorResponse();
     }
 
+
+
+    /**
+     * @param Post $post
+     * @param array $tags
+     * @return void
+     */
+    private function syncPostTags($post, array $tags)
+    {
+        if (!empty($tags)) {
+            // Syncing existing and new tags to post model
+            $tagModels = [];
+            foreach ($tags as $key => $value) {
+                $tagModels[] = Tag::firstOrCreate(['name' => $value->name], ['slug' => $value->slug]);
+            }
+            $post->tags()->sync(collect($tagModels)->pluck('id'));
+        } else {
+            // Removing all tags if tags empty
+            $post->tags()->sync([]);
+        }
+    }
+
+
+    private function unknownErrorResponse()
+    {
+        return response()->json(["message" => "An unknown error has occurred."], 500);
+    }
 
 
     /**

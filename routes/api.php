@@ -29,6 +29,7 @@ Route::group([
 
     Route::get('', 'API\PostController@index');
     Route::post('create', 'API\PostController@store');
+    Route::post('update', 'API\PostController@update');
     Route::post('imageUpload', 'API\PostController@uploadImage');
     Route::get('tags', 'API\PostController@indexTags');
     Route::delete('{post}', 'API\PostController@destroy');
