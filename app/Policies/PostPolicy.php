@@ -26,12 +26,13 @@ class PostPolicy
      * @param  \App\Models\User  $user
      * @return mixed
      */
-    public function create(User $user, Request $request)
+    public function create(User $user)
     {
-        if ($user->id === (int) $request->user_id) {
+
+        if ($user->isAdmin() || $user->isWriter()) {
             return true;
         }
-        return $this->deny('You are not allowed to post as someone else.');
+        return false;
     }
 
     /**
@@ -41,12 +42,24 @@ class PostPolicy
      * @param  \App\Post  $post
      * @return mixed
      */
-    public function update(User $user, Post $post, Request $request)
+    public function update(User $user, Post $post)
     {
-        if ($user->id === (int) $request->user_id && (int) $post->user_id === $user->id) {
+
+        // denying if post is owned by superadmin
+        if ($post->user->isSuperAdmin() && !$user->isSuperAdmin()) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
             return true;
         }
-        return $this->deny('You are not allowed to update someone else\'s post.');
+
+        if ($user->isWriter()) {
+            return $user->id === $post->user_id;
+        }
+
+
+        return false;
     }
 
     /**
@@ -58,9 +71,72 @@ class PostPolicy
      */
     public function delete(User $user, Post $post)
     {
-        if ($user->id === $post->user_id) {
+        // denying if post is owned by superadmin
+        if ($post->user->isSuperAdmin() && !$user->isSuperAdmin()) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
             return true;
         }
-        return $this->deny('You are not allowed to delete someone else\'s post.');
+
+        // writer can only delete their post
+        if ($user->isWriter()) {
+            return $user->id === $post->user_id;
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine whether the user can view model.
+     *
+     * @param  \App\Models\User  $user
+     * @return mixed
+     */
+    public function view(User $user, Post $post)
+    {
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        if ($user->isWriter()) {
+            return $user->id === $post->user_id;
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine whether the user can index model.
+     *
+     * @param  \App\Models\User  $user
+     * @return mixed
+     */
+    public function index(User $user)
+    {
+
+        if ($user->isAdmin() || $user->isWriter()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine whether the user can index all models.
+     *
+     * @param  \App\Models\User  $user
+     * @return mixed
+     */
+    public function indexAll(User $user)
+    {
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        return false;
     }
 }

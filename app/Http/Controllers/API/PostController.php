@@ -6,20 +6,22 @@ use Validator;
 use App\Models\Tag;
 use App\Models\Post;
 use App\Models\Type;
+use App\Models\User;
 use App\Models\PostMeta;
 use App\Traits\PostsTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
-use Cviebrock\EloquentSluggable\Services\SlugService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Console\Input\Input;
+use Cviebrock\EloquentSluggable\Services\SlugService;
 
 class PostController extends Controller
 {
 
     const  POST_VALIDATION_RULES = [
-        'user_id' => 'required|exists:App\Models\User,id|max:255',
         'published' => 'required|boolean',
         'title' => 'required|string|min:3|max:255',
         'slug' => 'required|string|min:3|max:255',
@@ -61,14 +63,26 @@ class PostController extends Controller
             'type' => 'string|exists:App\Models\Type,tag|max:255'
         ]);
 
+
+        $this->authorize('index', Post::class);
         $per_page = $request->filled('per_page') ? (int)$request->per_page : 10;
         $type = $request->filled('type') ? Type::where('tag', $request->type)->first() : null;
 
+
+        $posts = Post::select('id', 'title', 'featured', 'created_at', 'updated_at', 'type_id');
+        $where = [];
         if ($type) {
-            $posts = $type->posts()->paginate($per_page, ['id', 'title', 'featured', 'created_at', 'updated_at', 'type_id']);
-        } else {
-            $posts = Post::paginate($per_page, ['id', 'title', 'featured', 'created_at', 'updated_at', 'type_id']);
+            $where['type_id'] = $type->id;
         }
+        if ($request->user()->cannot('indexAll', Post::class)) {
+            $where['user_id'] = $request->user()->id;
+        }
+        if (!empty($where)) {
+            $posts = $posts->where($where);
+        }
+
+
+        $posts = $posts->paginate($per_page);
         foreach ($posts as $post) {
             $post->published = $post->isPublished();
             unset($post->type);
@@ -87,6 +101,9 @@ class PostController extends Controller
         if (!$post->exists) {
             return response()->json(["message" => "Post not found."], 404);
         }
+
+        $this->authorize('view', $post);
+
         $post->tags = $post->tags;
         $meta = $post->meta;
 
@@ -108,13 +125,13 @@ class PostController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request, User $user)
     {
         $postData = $this->decode_json_array($request->all());
 
         Validator::make($postData, self::POST_VALIDATION_RULES)->validate();
 
-        $this->authorize('create', [Post::class, $request]);
+        $this->authorize('create', Post::class);
 
 
         // Get post type
@@ -129,9 +146,7 @@ class PostController extends Controller
         $post->html = $postData["html"] ?? null;
         $post->custom_excerpt = $postData["custom_excerpt"] ?? null;
         $post->featured = $postData["featured"] ?? false;
-        $post->user_id = $postData["user_id"];
-
-
+        $post->user_id = $request->user()->id;
         if (
             $request->hasFile('featured_image_file') &&
             $request->file('featured_image_file')->isValid()
@@ -192,8 +207,6 @@ class PostController extends Controller
     public function update(Request $request)
     {
 
-
-
         $rules = self::POST_VALIDATION_RULES;
         $rules['id'] = 'required|exists:App\Models\Post,id|max:255';
         $postData = $this->decode_json_array($request->all());
@@ -204,7 +217,7 @@ class PostController extends Controller
         if (!$post->exists) {
             return $this->unknownErrorResponse();
         }
-        $this->authorize('update', [$post, $request]);
+        $this->authorize('update', $post);
 
         // Get post type
         $type = Type::where('tag', $postData["published"] ? "published" : "draft")->first();
@@ -216,7 +229,6 @@ class PostController extends Controller
         $post->html = $postData["html"] ?? null;
         $post->custom_excerpt = $postData["custom_excerpt"] ?? null;
         $post->featured = $postData["featured"] ?? false;
-        $post->user_id = $postData["user_id"];
 
         if (
             $request->hasFile('featured_image_file') &&
@@ -316,7 +328,7 @@ class PostController extends Controller
      */
     public function destroy(Post $post)
     {
-        $this->authorize('delete', [Post::class, $post]);
+        $this->authorize('delete', $post);
 
         if (Storage::disk('public')->exists($post->featured_image)) {
             Storage::disk('public')->delete($post->featured_image);
