@@ -25,8 +25,8 @@ class CreatePostsTable extends Migration
             $table->text('custom_excerpt')->nullable();
             $table->timestamps();
 
-            $table->foreign('type_id')->references('id')->on('types');
-            $table->foreign('user_id')->references('id')->on('types');
+            $table->foreign('type_id')->references('id')->on('types')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('types')->onDelete('cascade');
         });
     }
 

@@ -16,24 +16,57 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
 
+
+
+
+        // Add dummy roles
+        DB::table('roles')->insert([
+            [
+                'name' => 'Super Admin',
+                'tag' => 'superadmin',
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ],
+            [
+                'name' => 'Admin',
+                'tag' => 'admin',
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ],
+            [
+                'name' => 'Writer',
+                'tag' => 'writer',
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ],
+        ]);
+
         // Add dummy users
         DB::table('users')->insert([
             [
+                'email' => 'superadmin@gmail.com',
+                'name' => 'Ali Raza',
+                'password' => Hash::make('alimalik'),
+                'role' => 'superadmin',
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ],
+            [
                 'email' => 'admin@gmail.com',
-                'name' => 'Admin',
+                'name' => 'John Doe',
                 'password' => Hash::make('alimalik'),
                 'role' => 'admin',
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
-                'email' => 'user@gmail.com',
-                'name' => 'User',
+                'email' => 'writer@gmail.com',
+                'name' => 'Bud Foy',
                 'password' => Hash::make('alimalik'),
-                'role' => 'user',
+                'role' => 'writer',
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
-            ]
+            ],
         ]);
 
         // Post types
@@ -117,6 +150,6 @@ class DatabaseSeeder extends Seeder
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ]
-            ]);
+        ]);
     }
 }
