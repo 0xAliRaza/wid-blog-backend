@@ -18,8 +18,33 @@ class Post extends Model
      * @var array
      */
     protected $casts = [
-        'featured' => 'boolean',
+        'featured' => 'boolean', 'published' => 'boolean'
     ];
+
+
+    /**
+     * The attributes that should be appended to model.
+     *
+     * @var array
+     */
+    protected $appends = [
+        'published', 'meta_title', 'meta_description'
+    ];
+
+
+
+
+    /**
+     * The attributes that should be hidden.
+     *
+     * @var array
+     */
+    protected $hidden = [
+        'type', 'type_id', 'meta', 'user'
+    ];
+
+
+
 
 
 
@@ -56,6 +81,22 @@ class Post extends Model
     function meta()
     {
         return $this->hasOne('App\Models\PostMeta');
+    }
+
+
+    function getMetaTitleAttribute()
+    {
+        return !empty($this->meta) ? $this->meta->title : null;
+    }
+
+    function getMetaDescriptionAttribute()
+    {
+        return !empty($this->meta) ? $this->meta->description : null;
+    }
+
+    function getPublishedAttribute()
+    {
+        return $this->isPublished();
     }
 
     function isPublished(): bool

@@ -77,16 +77,13 @@ class PostController extends Controller
         if ($request->user()->cannot('indexAll', Post::class)) {
             $where['user_id'] = $request->user()->id;
         }
+
         if (!empty($where)) {
             $posts = $posts->where($where);
         }
 
 
         $posts = $posts->paginate($per_page);
-        foreach ($posts as $post) {
-            $post->published = $post->isPublished();
-            unset($post->type);
-        }
         return response()->json($posts);
     }
 
@@ -104,15 +101,7 @@ class PostController extends Controller
 
         $this->authorize('view', $post);
 
-        $post->tags = $post->tags;
-        $meta = $post->meta;
-
-        $post->meta_description = !empty($meta->description) ? $meta->description : null;
-        $post->meta_title = !empty($meta->title) ? $meta->title : null;
-        $post->published = $post->isPublished();
-        unset($post->meta);
-        unset($post->type);
-
+        $post->tags;
         return response()->json($post);
     }
 
@@ -163,31 +152,18 @@ class PostController extends Controller
 
         if ($post->save()) {
 
-            $this->syncPostTags($post, !empty($postData['tags']) ? $postData['tags'] : []);
+            $post->tags()->detach();
+            $tags = $this->getTagModels(!empty($postData['tags']) ? $postData['tags'] : []);
+            $post->tags = $post->tags()->saveMany($tags);
 
-
-
-            $post->meta_title = null;
-            $post->meta_description = null;
             if (!empty($postData["meta_title"])) {
                 // Settings meta title and meta description
-                $postMeta = new PostMeta();
-                $postMeta->title = $postData["meta_title"];
-                $postMeta->description = $postData["meta_description"] ?? null;
-                $postMeta->post_id = $post->id;
-                if ($postMeta->save()) {
-                    // Setting meta data to as model prop for response
-                    $post->meta_title = $postMeta->title;
-                    $post->meta_description = $postMeta->description;
-                };
+                $meta = new PostMeta();
+                $meta->title = $postData["meta_title"];
+                $meta->description = $postData["meta_description"] ?? null;
+                $post->meta = $post->meta()->save($meta);
             }
 
-
-
-            // Setting other data
-            $post->tags = $post->tags;
-            $post->published = $type->tag === "published" ? true : false;
-            unset($post->type_id);
             return response()->json($post);
         } else {
 
@@ -254,41 +230,31 @@ class PostController extends Controller
 
         // Generate unique slug
         $post->slug = SlugService::createSlug($post, "slug", $postData["slug"]);
+        // $tags = $this->getTagModels(!empty($postData['tags']) ? $postData['tags'] : []);
+        // $post->tags()->sync(collect($tags)->pluck('id'));
 
-        if ($post->save()) {
+        if ($post->saveOrFail()) {
+            // $post->tags = $tags;
 
-            $this->syncPostTags($post, !empty($postData['tags']) ? $postData['tags'] : []);
 
-
-            if (!empty($postData["meta_title"])) {
-                // Settings meta title and meta description
-                $postMeta = $post->meta ?? new PostMeta();
-                $postMeta->title = $postData["meta_title"];
-                $postMeta->description = $postData["meta_description"] ?? null;
-                $postMeta->post_id = $post->id;
-                $postMeta->save();
-                $post->meta_title = $postMeta->title;
-                $post->meta_description = $postMeta->description;
+            if (!empty($postData['meta_title'])) {
+                $meta = $post->meta ? $post->meta : new PostMeta();
+                $meta->title = $postData['meta_title'];
+                $meta->description = $postData["meta_description"] ?? null;
+                $post->meta = $post->meta()->save($meta);
             } else {
-                // Removing existing meta data if not present in request
-                $postMeta = $post->meta;
-                if ($postMeta) {
-                    $postMeta->delete();
-                }
-                $post->meta_title = null;
-                $post->meta_description = null;
+                $post->meta()->delete();
             }
-
-            // Setting other data
-            $post->tags = $post->tags;
-            $post->published = $type->tag === "published" ? true : false;
-            unset($post->type_id);
+            $post->tags()->detach();
+            $tags = $this->getTagModels(!empty($postData['tags']) ? $postData['tags'] : []);
+            $post->tags = $post->tags()->saveMany($tags);
 
             return response()->json($post);
         } else {
             // Delete featured image if post model failed to save
             Storage::disk('public')->delete($path);
         }
+
         return $this->unknownErrorResponse();
     }
 
@@ -297,21 +263,19 @@ class PostController extends Controller
     /**
      * @param Post $post
      * @param array $tags
-     * @return void
+     * @return Tag[] $tagsModels
      */
-    private function syncPostTags($post, array $tags)
+    private function getTagModels(array $tags = null)
     {
+        $tagModels = [];
         if (!empty($tags)) {
             // Syncing existing and new tags to post model
-            $tagModels = [];
             foreach ($tags as $key => $value) {
-                $tagModels[] = Tag::firstOrCreate(['name' => $value->name], ['slug' => $value->slug]);
+                $tagModels[] = Tag::firstOrCreate(['slug' => $value->slug], ['name' => $value->name]);
             }
-            $post->tags()->sync(collect($tagModels)->pluck('id'));
-        } else {
-            // Removing all tags if tags empty
-            $post->tags()->sync([]);
         }
+
+        return $tagModels;
     }
 
 
