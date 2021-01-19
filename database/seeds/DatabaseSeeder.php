@@ -47,7 +47,7 @@ class DatabaseSeeder extends Seeder
                 'email' => 'superadmin@gmail.com',
                 'name' => 'Ali Raza',
                 'password' => Hash::make('alimalik'),
-                'role' => 'superadmin',
+                'role_id' => 1,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
@@ -55,7 +55,7 @@ class DatabaseSeeder extends Seeder
                 'email' => 'admin@gmail.com',
                 'name' => 'John Doe',
                 'password' => Hash::make('alimalik'),
-                'role' => 'admin',
+                'role_id' => 2,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
@@ -63,7 +63,7 @@ class DatabaseSeeder extends Seeder
                 'email' => 'writer@gmail.com',
                 'name' => 'Bud Foy',
                 'password' => Hash::make('alimalik'),
-                'role' => 'writer',
+                'role_id' => 3,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],

@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
+use App\Models\Role;
+use Tymon\JWTAuth\Contracts\JWTSubject;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -25,7 +26,7 @@ class User extends Authenticatable implements JWTSubject
      * @var array
      */
     protected $hidden = [
-        'password', 'remember_token',
+        'password', 'remember_token'
     ];
 
     /**
@@ -36,6 +37,7 @@ class User extends Authenticatable implements JWTSubject
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
 
 
 
@@ -61,23 +63,28 @@ class User extends Authenticatable implements JWTSubject
     }
 
 
+
+
+
+
+
     function role()
     {
-     return $this->hasOne('App\Models\Role', 'tag', 'role');
+        return $this->belongsTo('App\Models\Role');
     }
 
     function isSuperAdmin(): bool
     {
-        return $this->role === "superadmin";
+        return $this->role->tag === "superadmin";
     }
 
     function isAdmin(): bool
     {
-        return $this->role === "admin";
+        return $this->role->tag === "admin";
     }
 
     function isWriter(): bool
     {
-        return $this->role === "writer";
+        return $this->role->tag === "writer";
     }
 }

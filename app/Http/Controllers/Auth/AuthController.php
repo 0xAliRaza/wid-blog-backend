@@ -114,6 +114,7 @@ class AuthController extends Controller
     protected function respondWithUserDetails($token = null)
     {
         $user = $this->guard()->userOrFail()->only(['id', 'name', 'email', 'role']);
+        $user['role'] = !empty($user['role']->tag) ? $user['role']->tag : null;
         if ($token) {
             $user["token"] = $token;
         }
