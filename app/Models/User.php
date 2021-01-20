@@ -7,6 +7,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use UserRoles;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -75,16 +76,16 @@ class User extends Authenticatable implements JWTSubject
 
     function isSuperAdmin(): bool
     {
-        return $this->role->tag === "superadmin";
+        return $this->role->tag === UserRoles::SuperAdmin;
     }
 
     function isAdmin(): bool
     {
-        return $this->role->tag === "admin";
+        return $this->role->tag === UserRoles::Admin;
     }
 
     function isWriter(): bool
     {
-        return $this->role->tag === "writer";
+        return $this->role->tag === UserRoles::Writer;
     }
 }
