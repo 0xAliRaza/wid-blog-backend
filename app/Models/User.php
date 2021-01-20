@@ -27,7 +27,7 @@ class User extends Authenticatable implements JWTSubject
      * @var array
      */
     protected $hidden = [
-        'password', 'remember_token', 'role'
+        'password', 'remember_token', 'role_id', 'roleModel', 'email_verified_at'
     ];
 
     /**
@@ -39,7 +39,16 @@ class User extends Authenticatable implements JWTSubject
         'email_verified_at' => 'datetime',
     ];
 
+    /**
+     * The attributes that should be appended.
+     *
+     * @var array
+     */
+    protected $appends = [
+        'role'
+    ];
 
+    protected $with = ['roleModel'];
 
 
 
@@ -64,28 +73,33 @@ class User extends Authenticatable implements JWTSubject
     }
 
 
-
-
-
-
-
-    function role()
+    function setRoleAttribute(Role $val)
     {
-        return $this->belongsTo('App\Models\Role');
+        $this->attributes['role_id'] = $val->id;
+        $this->roleModel->tag = $val->tag;
+    }
+    function getRoleAttribute()
+    {
+        return $this->roleModel->tag;
+    }
+
+    function roleModel()
+    {
+        return $this->belongsTo('App\Models\Role', 'role_id', 'id');
     }
 
     function isSuperAdmin(): bool
     {
-        return $this->role->tag === UserRoles::SuperAdmin;
+        return $this->role === UserRoles::SuperAdmin;
     }
 
     function isAdmin(): bool
     {
-        return $this->role->tag === UserRoles::Admin;
+        return $this->role === UserRoles::Admin;
     }
 
     function isWriter(): bool
     {
-        return $this->role->tag === UserRoles::Writer;
+        return $this->role === UserRoles::Writer;
     }
 }

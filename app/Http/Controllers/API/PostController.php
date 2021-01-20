@@ -10,12 +10,9 @@ use App\Models\User;
 use App\Models\PostMeta;
 use App\Traits\PostsTrait;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\Console\Input\Input;
 use Cviebrock\EloquentSluggable\Services\SlugService;
 
 class PostController extends Controller
@@ -277,11 +274,6 @@ class PostController extends Controller
         return $tagModels;
     }
 
-
-    private function unknownErrorResponse()
-    {
-        return response()->json(["message" => "An unknown error has occurred."], 500);
-    }
 
 
     /**

@@ -13,26 +13,40 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::group(['prefix' => 'auth'], function () {
-    Route::post('login', 'Auth\AuthController@login');
-    Route::post('refresh', 'Auth\AuthController@refresh');
+Route::group(['prefix' => 'auth', 'namespace' => 'Auth'], function () {
+    Route::post('login', 'AuthController@login');
+    Route::post('refresh', 'AuthController@refresh');
     Route::group(['middleware' => 'jwt.auth:api'], function () {
-        Route::post('logout', 'Auth\AuthController@logout');
-        Route::post('me', 'Auth\AuthController@me');
+        Route::post('logout', 'AuthController@logout');
+        Route::post('me', 'AuthController@me');
     });
 });
 
 
 Route::group([
     'middleware' => 'jwt.auth:api',
-    'prefix' => 'post'
+    'prefix' => 'post',
+    'namespace' => 'API'
 ], function () {
 
-    Route::get('', 'API\PostController@index');
-    Route::post('create', 'API\PostController@store');
-    Route::post('update', 'API\PostController@update');
-    Route::post('imageUpload', 'API\PostController@uploadImage');
-    Route::get('tags', 'API\PostController@indexTags');
-    Route::delete('{post}', 'API\PostController@destroy');
-    Route::get('{post}', 'API\PostController@getPost');
+    Route::get('', 'PostController@index');
+    Route::post('create', 'PostController@store');
+    Route::post('update', 'PostController@update');
+    Route::post('imageUpload', 'PostController@uploadImage');
+    Route::get('tags', 'PostController@indexTags');
+    Route::delete('{post}', 'PostController@destroy');
+    Route::get('{post}', 'PostController@getPost');
+});
+
+Route::group([
+    'middleware' => 'jwt.auth:api',
+    'prefix' => 'user',
+    'namespace' => 'API'
+], function () {
+
+    Route::get('', 'UserController@index');
+    Route::post('create', 'UserController@store');
+    Route::put('{user}', 'UserController@update');
+    Route::delete('{user}', 'UserController@destroy');
+    Route::get('{user}', 'UserController@show');
 });
