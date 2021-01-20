@@ -1,4 +1,8 @@
 <?php
+
+namespace App\Models;
+
+
 abstract class UserRoles
 {
     const SuperAdmin = "superadmin";

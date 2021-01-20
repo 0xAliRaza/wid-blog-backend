@@ -3,11 +3,11 @@
 namespace App\Models;
 
 use App\Models\Role;
+use App\Models\UserRoles;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use UserRoles;
 
 class User extends Authenticatable implements JWTSubject
 {
