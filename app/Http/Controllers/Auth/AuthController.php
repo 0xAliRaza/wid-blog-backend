@@ -18,7 +18,7 @@ class AuthController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('jwt.auth:api', ['except' => ['login', 'refresh']]);
+
     }
 
     /**
@@ -80,6 +80,7 @@ class AuthController extends Controller
                 // Get User by new token and return it.
                 JWTAuth::setToken($token);
                 $user = JWTAuth::toUser($token)->only(['id', 'name', 'email', 'role']);
+                $user['role'] = $user['role']->tag;
                 $user["token"] = $token;
                 return response()->json($user);
             }
@@ -114,7 +115,7 @@ class AuthController extends Controller
     protected function respondWithUserDetails($token = null)
     {
         $user = $this->guard()->userOrFail()->only(['id', 'name', 'email', 'role']);
-        $user['role'] = !empty($user['role']->tag) ? $user['role']->tag : null;
+        $user['role'] = $user['role']->tag;
         if ($token) {
             $user["token"] = $token;
         }

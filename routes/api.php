@@ -14,16 +14,17 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::group(['prefix' => 'auth'], function () {
-    // Middleware is assigned in the Controller...
     Route::post('login', 'Auth\AuthController@login');
     Route::post('refresh', 'Auth\AuthController@refresh');
-    Route::post('logout', 'Auth\AuthController@logout');
-    Route::post('me', 'Auth\AuthController@me');
+    Route::group(['middleware' => 'jwt.auth:api'], function () {
+        Route::post('logout', 'Auth\AuthController@logout');
+        Route::post('me', 'Auth\AuthController@me');
+    });
 });
 
 
 Route::group([
-    'middleware' => 'jwt.auth',
+    'middleware' => 'jwt.auth:api',
     'prefix' => 'post'
 ], function () {
 
