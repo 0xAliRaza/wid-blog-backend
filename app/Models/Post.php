@@ -28,7 +28,7 @@ class Post extends Model
      * @var array
      */
     protected $appends = [
-        'published', 'meta_title', 'meta_description'
+        'published', 'meta_title', 'meta_description', 'first_tag'
     ];
 
 
@@ -40,7 +40,18 @@ class Post extends Model
      * @var array
      */
     protected $hidden = [
-        'type', 'type_id', 'meta', 'user'
+        'type', 'type_id', 'meta', 'user_id'
+    ];
+    
+    
+    
+    /**
+     * The relationships that should eager load.
+     *
+     * @var array
+     */
+    protected $with = [
+        'user'
     ];
 
 
@@ -81,6 +92,12 @@ class Post extends Model
     function meta()
     {
         return $this->hasOne('App\Models\PostMeta');
+    }
+
+
+    function getFirstTagAttribute()
+    {
+        return $this->tags()->oldest()->first();
     }
 
 

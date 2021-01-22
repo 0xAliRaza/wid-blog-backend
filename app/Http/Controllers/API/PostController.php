@@ -65,7 +65,7 @@ class PostController extends Controller
         $type = $request->filled('type') ? Type::where('tag', $request->type)->first() : null;
 
 
-        $posts = Post::select('id', 'title', 'featured', 'created_at', 'updated_at', 'type_id');
+        $posts = Post::select('id', 'title', 'featured', 'created_at', 'updated_at', 'type_id', 'user_id');
         $where = [];
         if ($type) {
             $where['type_id'] = $type->id;
