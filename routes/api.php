@@ -50,3 +50,14 @@ Route::group([
     Route::delete('{user}', 'UserController@destroy');
     Route::get('{user}', 'UserController@show');
 });
+
+Route::group([
+    'middleware' => 'jwt.auth:api',
+    'prefix' => 'setting',
+    'namespace' => 'API'
+], function () {
+
+    Route::get('', 'SettingController@show');
+    Route::post('create', 'SettingController@store');
+    Route::delete('', 'SettingController@destroy');
+});
