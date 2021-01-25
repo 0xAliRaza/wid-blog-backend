@@ -58,6 +58,6 @@ Route::group([
 ], function () {
 
     Route::get('', 'SettingController@show');
-    Route::post('create', 'SettingController@store');
+    Route::post('', 'SettingController@store');
     Route::delete('', 'SettingController@destroy');
 });

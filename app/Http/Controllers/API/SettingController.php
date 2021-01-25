@@ -46,10 +46,10 @@ class SettingController extends Controller
     {
         $this->authorize('viewAny', Setting::class);
         $setting = Setting::first();
-        if (!$setting->exists) {
-            return response()->json(['message' => 'Setting not found.'], 404);
+        if ($setting && $setting->exists) {
+            return response()->json($setting);
         }
-        return response()->json($setting);
+        return response()->json(['message' => 'Setting not found.'], 404);
     }
 
 
