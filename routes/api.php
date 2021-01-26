@@ -61,3 +61,16 @@ Route::group([
     Route::post('', 'SettingController@store');
     Route::delete('', 'SettingController@destroy');
 });
+
+
+Route::group([
+    'middleware' => 'jwt.auth:api',
+    'prefix' => 'tag',
+    'namespace' => 'API'
+], function () {
+
+    Route::get('', 'TagController@index');
+    Route::post('', 'TagController@store');
+    Route::put('{tag}', 'TagController@update');
+    Route::delete('{tag}', 'TagController@destroy');
+});
