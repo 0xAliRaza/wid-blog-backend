@@ -27,7 +27,10 @@ class UserPolicy
      */
     public function index(User $user)
     {
-        return $user->isAdmin();
+        if($user->isAdmin() || $user->isWriter()) {
+            return true;
+        };
+        return false;
     }
 
     /**
