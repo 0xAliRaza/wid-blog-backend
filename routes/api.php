@@ -33,7 +33,6 @@ Route::group([
     Route::post('', 'PostController@store');
     Route::post('update', 'PostController@update');
     Route::post('imageUpload', 'PostController@uploadImage');
-    Route::get('tags', 'PostController@indexTags');
     Route::delete('{post}', 'PostController@destroy');
     Route::get('{post}', 'PostController@getPost');
 });
