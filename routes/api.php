@@ -30,7 +30,7 @@ Route::group([
 ], function () {
 
     Route::get('', 'PostController@index');
-    Route::post('create', 'PostController@store');
+    Route::post('', 'PostController@store');
     Route::post('update', 'PostController@update');
     Route::post('imageUpload', 'PostController@uploadImage');
     Route::get('tags', 'PostController@indexTags');
@@ -45,7 +45,7 @@ Route::group([
 ], function () {
 
     Route::get('', 'UserController@index');
-    Route::post('create', 'UserController@store');
+    Route::post('', 'UserController@store');
     Route::put('{user}', 'UserController@update');
     Route::delete('{user}', 'UserController@destroy');
     Route::get('{user}', 'UserController@show');
