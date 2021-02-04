@@ -10,7 +10,7 @@ class Post extends Model
     use Sluggable;
 
 
-    protected $attributes = ['html' => null, 'custom_excerpt' => null, 'featured' => 0, 'featured_image' => null];
+    protected $attributes = ['html' => null, 'custom_excerpt' => null, 'featured' => 0, 'featured_image' => null, 'published_at' => null];
 
     /**
      * The attributes that should be cast to native types.
@@ -53,7 +53,14 @@ class Post extends Model
     protected $with = [
         'user'
     ];
-
+    
+    
+    /**
+     * The columns that should be mutated to date type.
+     *
+     * @var array
+     */
+    protected $dates = ['published_at'];
 
 
 

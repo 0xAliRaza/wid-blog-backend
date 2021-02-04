@@ -18,20 +18,20 @@ use Cviebrock\EloquentSluggable\Services\SlugService;
 class PostController extends Controller
 {
 
+
     const  POST_VALIDATION_RULES = [
-        'published' => 'required|boolean',
-        'title' => 'required|string|min:3|max:255',
-        'slug' => 'required|string|min:3|max:255',
-        'html' => 'nullable|string|min:3|max:30000',
-        'custom_excerpt' => 'nullable|string|max:4000',
-        'meta_title' => 'nullable|string|max:255|required_with:meta_description',
-        'meta_description' => 'nullable|string|max:4000',
-        'featured' => 'boolean',
-        'tags' => 'nullable|array',
-        'tags[*]name' => 'string|max:255',
-        'tags[*]slug' => 'required_with:tags[*]name|string|max:255',
-        'featured_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5000',
-        'featured_image' => 'nullable|string|max:255'
+        "published" => "required|boolean",
+        "title" => "required|string|min:3|max:255",
+        "slug" => "required|string|min:3|max:255",
+        "html" => "nullable|string|min:3|max:30000",
+        "custom_excerpt" => "nullable|string|max:4000",
+        "meta_title" => "nullable|string|max:255|required_with:meta_description",
+        "meta_description" => "nullable|string|max:4000",
+        "featured" => "boolean",
+        "tags" => "nullable|array",
+        "tags[*]name" => "string|max:255",
+        "tags[*]slug" => "required_with:tags[*]name|string|max:255",
+        "featured_image_file" => "nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5000",
     ];
 
 
@@ -124,8 +124,12 @@ class PostController extends Controller
         if (empty($type)) {
             return $this->unknownErrorResponse();
         }
-
         $post = $this->get();
+
+        if ($type->tag === "published") {
+            $post->published_at = now();
+        }
+
         $post->type_id = $type->id;
         $post->title = $postData["title"];
         $post->html = $postData["html"] ?? null;
@@ -178,9 +182,9 @@ class PostController extends Controller
      */
     public function update(Request $request)
     {
-
         $rules = self::POST_VALIDATION_RULES;
         $rules['id'] = 'required|exists:App\Models\Post,id|max:255';
+        $rules['published_at'] = 'nullable|date|before_or_equal:' . now() . '|max:255';
         $postData = $this->decode_json_array($request->all());
         Validator::make($postData, $rules)->validate();
 
@@ -195,6 +199,16 @@ class PostController extends Controller
         $type = Type::where('tag', $postData["published"] ? "published" : "draft")->first();
         if (empty($type)) {
             return $this->unknownErrorResponse();
+        }
+
+        if ($type->tag === "published") {
+            if (!empty($postData['published_at'])) {
+                $post->published_at = $postData['published_at'];
+            } else {
+                $post->published_at = now();
+            }
+        } else {
+            $post->published_at = null;
         }
         $post->type_id = $type->id;
         $post->title = $postData["title"];
