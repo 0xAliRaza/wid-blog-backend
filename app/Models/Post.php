@@ -86,6 +86,16 @@ class Post extends Model
         return $this->belongsTo('App\Models\User');
     }
 
+    /**
+     * Get the associated user(author) model
+     *
+     * @return App\Models\User
+     */
+    function author()
+    {
+        return $this->belongsTo('App\Models\User', 'author', 'id');
+    }
+
     function isEmpty()
     {
         return empty($this->getAttribute('id'));
@@ -122,6 +132,7 @@ class Post extends Model
     {
         return $this->isPublished();
     }
+
 
     function isPublished(): bool
     {

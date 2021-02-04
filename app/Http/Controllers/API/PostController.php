@@ -32,6 +32,7 @@ class PostController extends Controller
         "tags[*]name" => "string|max:255",
         "tags[*]slug" => "required_with:tags[*]name|string|max:255",
         "featured_image_file" => "nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5000",
+        "author" => "required|integer|exists:App\Models\User,id|max:255"
     ];
 
 
@@ -53,7 +54,6 @@ class PostController extends Controller
      */
     public function index(Request $request)
     {
-
         $request->validate([
             'per_page' => 'numeric|max:255',
             'type' => 'string|exists:App\Models\Type,tag|max:255'
@@ -110,7 +110,7 @@ class PostController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request, User $user)
+    public function store(Request $request)
     {
         $postData = $this->decode_json_array($request->all());
 
@@ -136,6 +136,11 @@ class PostController extends Controller
         $post->custom_excerpt = $postData["custom_excerpt"] ?? null;
         $post->featured = $postData["featured"] ?? false;
         $post->user_id = $request->user()->id;
+        if (($request->user()->isSuperAdmin() || $request->user()->isAdmin())) {
+            $post->setAttribute('author', $postData['author']);
+        } else {
+            $post->setAttribute('author', $request->user()->id);
+        }
         if (
             $request->hasFile('featured_image_file') &&
             $request->file('featured_image_file')->isValid()
@@ -215,6 +220,12 @@ class PostController extends Controller
         $post->html = $postData["html"] ?? null;
         $post->custom_excerpt = $postData["custom_excerpt"] ?? null;
         $post->featured = $postData["featured"] ?? false;
+        if (($request->user()->isSuperAdmin() || $request->user()->isAdmin())) {
+            $post->setAttribute('author', $postData['author']);
+        } else {
+            $post->setAttribute('author', $request->user()->id);
+        }
+
 
         if (
             $request->hasFile('featured_image_file') &&
@@ -240,8 +251,6 @@ class PostController extends Controller
 
         // Generate unique slug
         $post->slug = SlugService::createSlug($post, "slug", $postData["slug"]);
-        // $tags = $this->getTagModels(!empty($postData['tags']) ? $postData['tags'] : []);
-        // $post->tags()->sync(collect($tags)->pluck('id'));
 
         if ($post->saveOrFail()) {
             // $post->tags = $tags;
