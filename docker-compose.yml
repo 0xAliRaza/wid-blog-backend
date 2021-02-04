@@ -7,7 +7,7 @@ services:
         uid: 1000
       context: ./
       dockerfile: Dockerfile
-    image: wid-blog-backend
+    image: 0xaliraza/wid-blog-backend
     container_name: wid-blog-backend-app
     restart: unless-stopped
     working_dir: /var/www/
