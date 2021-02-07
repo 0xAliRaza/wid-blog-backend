@@ -13,6 +13,23 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+
+
+
+Route::group([
+    'prefix' => 'blog',
+    'namespace' => 'API'
+], function () {
+
+    Route::get('', 'BlogController@index');
+    // Route::post('', 'BlogController@store');
+    Route::get('{post:slug}', 'BlogController@show');
+    // Route::delete('{tag}', 'BlogController@destroy');
+});
+
+
+
+
 Route::group(['prefix' => 'auth', 'namespace' => 'Auth'], function () {
     Route::post('login', 'AuthController@login');
     Route::post('refresh', 'AuthController@refresh');

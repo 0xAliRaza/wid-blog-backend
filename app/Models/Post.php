@@ -42,9 +42,9 @@ class Post extends Model
     protected $hidden = [
         'type', 'type_id', 'meta', 'user_id'
     ];
-    
-    
-    
+
+
+
     /**
      * The relationships that should eager load.
      *
@@ -53,8 +53,8 @@ class Post extends Model
     protected $with = [
         'user'
     ];
-    
-    
+
+
     /**
      * The columns that should be mutated to date type.
      *
