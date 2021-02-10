@@ -22,9 +22,11 @@ class BlogController extends Controller
             return $this->unknownErrorResponse();
         }
 
-        $posts = Post::where('type_id', $published->id)
-            ->get()
-            ->makeHidden(['published', 'user', 'created_at', 'updated_at', 'first_tag', 'html', 'meta_description', 'meta_title']);
+
+        $paginator = Post::where('type_id', $published->id)
+            ->paginate(10);
+       
+            $posts = $paginator->makeHidden(['published', 'user', 'created_at', 'updated_at', 'first_tag', 'html', 'meta_description', 'meta_title']);
 
         foreach ($posts as $post) {
             $post->tags = $post->tags()
@@ -33,7 +35,10 @@ class BlogController extends Controller
                 ->makeHidden(['id', 'created_at', 'updated_at']);
             $post->author = $post->author()->get()->makeHidden(['email', 'role', 'created_at', 'updated_at'])->first();
         }
-        return response()->json($posts);
+        
+        $paginator->data = $posts;  
+
+        return response()->json($paginator);
     }
 
 
