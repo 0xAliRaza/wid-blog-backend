@@ -10,7 +10,7 @@ class Post extends Model
     use Sluggable;
 
 
-    protected $attributes = ['html' => null, 'custom_excerpt' => null, 'featured' => 0, 'featured_image' => null, 'published_at' => null];
+    protected $attributes = ['html' => null, 'custom_excerpt' => null, 'featured' => 0, 'featured_image' => null, 'published_at' => null, 'page' => false];
 
     /**
      * The attributes that should be cast to native types.
@@ -18,7 +18,7 @@ class Post extends Model
      * @var array
      */
     protected $casts = [
-        'featured' => 'boolean', 'published' => 'boolean'
+        'featured' => 'boolean', 'published' => 'boolean', 'page' => 'boolean'
     ];
 
 
@@ -139,6 +139,10 @@ class Post extends Model
         return !empty($this->type->tag) && $this->type->tag === "published";
     }
 
+    function isPage(): bool
+    {
+        return $this->page;
+    }
 
     /**
      * Return the sluggable configuration array for this model.

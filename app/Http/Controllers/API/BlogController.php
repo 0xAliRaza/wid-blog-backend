@@ -24,11 +24,11 @@ class BlogController extends Controller
         }
 
 
-        $paginator = Post::where('type_id', $published->id)
+        $paginator = Post::where(['type_id' => $published->id, 'page' => false])
             ->latest('published_at')
             ->paginate(10);
 
-        $posts = $paginator->makeHidden(['published', 'user', 'created_at', 'updated_at', 'first_tag', 'html', 'meta_description', 'meta_title']);
+        $posts = $paginator->makeHidden(['published', 'user', 'created_at', 'updated_at', 'first_tag', 'html', 'meta_description', 'meta_title', 'page']);
 
         foreach ($posts as $post) {
             $post->tags = $post->tags()
@@ -53,8 +53,8 @@ class BlogController extends Controller
     public function show(Post $post)
 
     {
-        if ($post->exists && $post->isPublished()) {
-            $post->makeHidden(['published', 'user', 'created_at', 'updated_at', 'first_tag']);
+        if ($post->exists && $post->isPublished() && !$post->isPage()) {
+            $post->makeHidden(['published', 'user', 'created_at', 'updated_at', 'first_tag', 'page']);
             $post->tags = $post->tags()
                 ->oldest()
                 ->get()

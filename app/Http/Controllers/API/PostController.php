@@ -32,7 +32,8 @@ class PostController extends Controller
         "tags[*]name" => "string|max:255",
         "tags[*]slug" => "required_with:tags[*]name|string|max:255",
         "featured_image_file" => "nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5000",
-        "author" => "required|integer|exists:App\Models\User,id|max:255"
+        "author" => "required|integer|exists:App\Models\User,id|max:255",
+        "page" => "required|boolean"
     ];
 
 
@@ -56,7 +57,8 @@ class PostController extends Controller
     {
         $request->validate([
             'per_page' => 'numeric|max:255',
-            'type' => 'string|exists:App\Models\Type,tag|max:255'
+            'type' => 'string|exists:App\Models\Type,tag|max:255',
+            'pagePost' => 'max:255'
         ]);
 
 
@@ -67,6 +69,13 @@ class PostController extends Controller
 
         $posts = Post::select('id', 'title', 'featured', 'created_at', 'updated_at', 'type_id', 'user_id');
         $where = [];
+
+        if ($request->has('pagePost')) {
+            $where['page'] =  true;
+        } else {
+            $where['page'] = false;
+        }
+
         if ($type) {
             $where['type_id'] = $type->id;
         }
@@ -77,7 +86,6 @@ class PostController extends Controller
         if (!empty($where)) {
             $posts = $posts->where($where);
         }
-
 
         $posts = $posts->latest()->paginate($per_page);
         return response()->json($posts);
@@ -135,6 +143,7 @@ class PostController extends Controller
         $post->html = $postData["html"] ?? null;
         $post->custom_excerpt = $postData["custom_excerpt"] ?? null;
         $post->featured = $postData["featured"] ?? false;
+        $post->page = $postData["page"];
         $post->user_id = $request->user()->id;
         if (($request->user()->isSuperAdmin() || $request->user()->isAdmin())) {
             $post->setAttribute('author', $postData['author']);
@@ -220,6 +229,7 @@ class PostController extends Controller
         $post->html = $postData["html"] ?? null;
         $post->custom_excerpt = $postData["custom_excerpt"] ?? null;
         $post->featured = $postData["featured"] ?? false;
+        $post->page = $postData["page"];
         if (($request->user()->isSuperAdmin() || $request->user()->isAdmin())) {
             $post->setAttribute('author', $postData['author']);
         } else {
