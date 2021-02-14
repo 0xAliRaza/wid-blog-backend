@@ -6,6 +6,7 @@ use App\Models\Post;
 use App\Models\Type;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\Tag;
 
 class BlogController extends Controller
 {
@@ -24,9 +25,10 @@ class BlogController extends Controller
 
 
         $paginator = Post::where('type_id', $published->id)
+            ->latest('published_at')
             ->paginate(10);
-       
-            $posts = $paginator->makeHidden(['published', 'user', 'created_at', 'updated_at', 'first_tag', 'html', 'meta_description', 'meta_title']);
+
+        $posts = $paginator->makeHidden(['published', 'user', 'created_at', 'updated_at', 'first_tag', 'html', 'meta_description', 'meta_title']);
 
         foreach ($posts as $post) {
             $post->tags = $post->tags()
@@ -35,8 +37,8 @@ class BlogController extends Controller
                 ->makeHidden(['id', 'created_at', 'updated_at']);
             $post->author = $post->author()->get()->makeHidden(['email', 'role', 'created_at', 'updated_at'])->first();
         }
-        
-        $paginator->data = $posts;  
+
+        $paginator->data = $posts;
 
         return response()->json($paginator);
     }
@@ -60,6 +62,24 @@ class BlogController extends Controller
             $post->author = $post->author()->get()->makeHidden(['email', 'role', 'created_at', 'updated_at'])->first();
             return response()->json($post);
         }
+        abort(404);
+    }
+
+
+    /**
+     * Get all tags.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function tag()
+    {
+        $tags = Tag::oldest()
+            ->get()
+            ->makeHidden(['id', 'created_at', 'updated_at']);
+        if (!empty($tags)) {
+            return response()->json($tags);
+        }
+
         abort(404);
     }
 

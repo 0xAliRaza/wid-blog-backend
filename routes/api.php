@@ -23,6 +23,7 @@ Route::group([
 
     Route::get('', 'BlogController@index');
     // Route::post('', 'BlogController@store');
+    Route::get('tag', 'BlogController@tag');
     Route::get('{post:slug}', 'BlogController@show');
     // Route::delete('{tag}', 'BlogController@destroy');
 });

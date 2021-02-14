@@ -79,7 +79,7 @@ class PostController extends Controller
         }
 
 
-        $posts = $posts->paginate($per_page);
+        $posts = $posts->latest()->paginate($per_page);
         return response()->json($posts);
     }
 
