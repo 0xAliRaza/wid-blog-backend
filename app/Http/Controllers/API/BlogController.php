@@ -45,6 +45,25 @@ class BlogController extends Controller
 
 
     /**
+     * Display a listing of the pages.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function indexPages(Request $request)
+    {
+
+        $published = Type::where('tag', 'published')->first();
+        if (empty($published)) {
+            return $this->unknownErrorResponse();
+        }
+        $page = Post::select('id', 'slug', 'title')->where(['type_id' => $published->id, 'page' => true])
+            ->oldest('published_at')->get()
+            ->makeHidden(['published', 'meta_title', 'meta_description', 'first_tag', 'user']);
+        return response()->json($page);
+    }
+
+
+    /**
      * Display the specified resource.
      *
      * @param  string  $slug
@@ -53,8 +72,8 @@ class BlogController extends Controller
     public function show(Post $post)
 
     {
-        if ($post->exists && $post->isPublished() && !$post->isPage()) {
-            $post->makeHidden(['published', 'user', 'created_at', 'updated_at', 'first_tag', 'page']);
+        if ($post->exists && $post->isPublished()) {
+            $post->makeHidden(['published', 'user', 'created_at', 'updated_at', 'first_tag']);
             $post->tags = $post->tags()
                 ->oldest()
                 ->get()

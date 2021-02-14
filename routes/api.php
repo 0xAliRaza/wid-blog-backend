@@ -22,10 +22,9 @@ Route::group([
 ], function () {
 
     Route::get('', 'BlogController@index');
-    // Route::post('', 'BlogController@store');
     Route::get('tag', 'BlogController@tag');
+    Route::get('page', 'BlogController@indexPages');
     Route::get('{post:slug}', 'BlogController@show');
-    // Route::delete('{tag}', 'BlogController@destroy');
 });
 
 
@@ -51,6 +50,7 @@ Route::group([
     Route::post('', 'PostController@store');
     Route::post('update', 'PostController@update');
     Route::post('imageUpload', 'PostController@uploadImage');
+    Route::get('page/{post}', 'PostController@getPage');
     Route::delete('{post}', 'PostController@destroy');
     Route::get('{post}', 'PostController@getPost');
 });

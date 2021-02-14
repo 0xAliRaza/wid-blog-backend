@@ -99,7 +99,24 @@ class PostController extends Controller
      */
     public function getPost(Post $post)
     {
-        if (!$post->exists) {
+        if (!$post->exists || $post->isPage()) {
+            return response()->json(["message" => "Post not found."], 404);
+        }
+
+        $this->authorize('view', $post);
+
+        $post->tags;
+        return response()->json($post);
+    }
+
+    /**
+     * Get a post model.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getPage(Post $post)
+    {
+        if (!$post->exists || !$post->isPage()) {
             return response()->json(["message" => "Post not found."], 404);
         }
 
