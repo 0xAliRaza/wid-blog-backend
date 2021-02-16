@@ -27,7 +27,7 @@ class User extends Authenticatable implements JWTSubject
      * @var array
      */
     protected $hidden = [
-        'password', 'remember_token', 'role_id', 'roleModel', 'email_verified_at'
+        'password', 'remember_token', 'role_id', 'roleModel', 'email_verified_at', 'email', 'created_at', 'updated_at'
     ];
 
     /**
@@ -76,11 +76,11 @@ class User extends Authenticatable implements JWTSubject
     function setRoleAttribute(Role $val)
     {
         $this->attributes['role_id'] = $val->id;
-        $this->roleModel->tag = $val->tag;
+        $this->roleModel->slug = $val->slug;
     }
     function getRoleAttribute()
     {
-        return $this->roleModel->tag;
+        return $this->roleModel->slug;
     }
 
     function roleModel()

@@ -12,6 +12,7 @@ use App\Traits\PostsTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
+use App\Models\PostTypes;
 use Illuminate\Support\Facades\Storage;
 use Cviebrock\EloquentSluggable\Services\SlugService;
 
@@ -32,8 +33,8 @@ class PostController extends Controller
         "tags[*]name" => "string|max:255",
         "tags[*]slug" => "required_with:tags[*]name|string|max:255",
         "featured_image_file" => "nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5000",
-        "author" => "required|integer|exists:App\Models\User,id|max:255",
-        "page" => "required|boolean"
+        "author_id" => "required|integer|exists:App\Models\User,id|max:255",
+        "type" => "required|string|in:" . PostTypes::Page . "," . PostTypes::Post . "|max:255"
     ];
 
 
@@ -57,38 +58,27 @@ class PostController extends Controller
     {
         $request->validate([
             'per_page' => 'numeric|max:255',
-            'type' => 'string|exists:App\Models\Type,tag|max:255',
-            'pagePost' => 'max:255'
+            'published' => 'numeric|in:1,0|max:255',
+            'type' => 'required|string|in:' . PostTypes::Post . ',' . PostTypes::Page . '|max:255'
         ]);
 
 
         $this->authorize('index', Post::class);
         $per_page = $request->filled('per_page') ? (int)$request->per_page : 10;
-        $type = $request->filled('type') ? Type::where('tag', $request->type)->first() : null;
 
-
-        $posts = Post::select('id', 'title', 'featured', 'created_at', 'updated_at', 'type_id', 'user_id');
         $where = [];
-
-        if ($request->has('pagePost')) {
-            $where['page'] =  true;
-        } else {
-            $where['page'] = false;
+        $where['type'] = $request->type;
+        if ($request->has('published')) {
+            $where['published'] = $request->published;
         }
 
-        if ($type) {
-            $where['type_id'] = $type->id;
-        }
+
         if ($request->user()->cannot('indexAll', Post::class)) {
             $where['user_id'] = $request->user()->id;
         }
 
-        if (!empty($where)) {
-            $posts = $posts->where($where);
-        }
-
-        $posts = $posts->latest()->paginate($per_page);
-        return response()->json($posts);
+        $paginator = Post::select('id', 'title', 'featured', 'published', 'user_id', 'created_at', 'updated_at')->where($where)->latest()->paginate($per_page);
+        return response()->json($paginator);
     }
 
 
@@ -143,29 +133,23 @@ class PostController extends Controller
 
         $this->authorize('create', Post::class);
 
-
-        // Get post type
-        $type = Type::where('tag', $postData["published"] ? "published" : "draft")->first();
-        if (empty($type)) {
-            return $this->unknownErrorResponse();
-        }
         $post = $this->get();
 
-        if ($type->tag === "published") {
+        if ($postData['published'] == true) {
             $post->published_at = now();
         }
 
-        $post->type_id = $type->id;
-        $post->title = $postData["title"];
-        $post->html = $postData["html"] ?? null;
-        $post->custom_excerpt = $postData["custom_excerpt"] ?? null;
-        $post->featured = $postData["featured"] ?? false;
-        $post->page = $postData["page"];
-        $post->user_id = $request->user()->id;
+        $post->setAttribute('title', $postData["title"]);
+        $post->setAttribute('html', $postData["html"] ?? null);
+        $post->setAttribute('custom_excerpt', $postData["custom_excerpt"] ?? null);
+        $post->setAttribute('featured', $postData["featured"] ?? false);
+        $post->setAttribute('published', $postData["published"]);
+        $post->setAttribute('type', $postData["type"]);
+        $post->setAttribute('user_id', $request->user()->id);
         if (($request->user()->isSuperAdmin() || $request->user()->isAdmin())) {
-            $post->setAttribute('author', $postData['author']);
+            $post->setAttribute('author_id', $postData['author_id']);
         } else {
-            $post->setAttribute('author', $request->user()->id);
+            $post->setAttribute('author_id', $request->user()->id);
         }
         if (
             $request->hasFile('featured_image_file') &&
@@ -182,6 +166,8 @@ class PostController extends Controller
         $post->slug = SlugService::createSlug($post, "slug", $postData["slug"]);
 
         if ($post->save()) {
+            $post->user;
+            $post->author;
 
             $post->tags()->detach();
             $tags = $this->getTagModels(!empty($postData['tags']) ? $postData['tags'] : []);
@@ -226,31 +212,22 @@ class PostController extends Controller
         }
         $this->authorize('update', $post);
 
-        // Get post type
-        $type = Type::where('tag', $postData["published"] ? "published" : "draft")->first();
-        if (empty($type)) {
-            return $this->unknownErrorResponse();
-        }
-
-        if ($type->tag === "published") {
-            if (!empty($postData['published_at'])) {
-                $post->published_at = $postData['published_at'];
-            } else {
-                $post->published_at = now();
-            }
+        if ($postData["published"] == true) {
+            $post->published_at = $postData['published_at'] ?? now();
         } else {
             $post->published_at = null;
         }
-        $post->type_id = $type->id;
-        $post->title = $postData["title"];
-        $post->html = $postData["html"] ?? null;
-        $post->custom_excerpt = $postData["custom_excerpt"] ?? null;
-        $post->featured = $postData["featured"] ?? false;
-        $post->page = $postData["page"];
+
+        $post->setAttribute('title', $postData["title"]);
+        $post->setAttribute('html', $postData["html"] ?? null);
+        $post->setAttribute('custom_excerpt', $postData["custom_excerpt"] ?? null);
+        $post->setAttribute('featured', $postData["featured"] ?? false);
+        $post->setAttribute('type', $postData["type"]);
+        $post->setAttribute('published', $postData["published"]);
         if (($request->user()->isSuperAdmin() || $request->user()->isAdmin())) {
-            $post->setAttribute('author', $postData['author']);
+            $post->setAttribute('author_id', $postData['author_id']);
         } else {
-            $post->setAttribute('author', $request->user()->id);
+            $post->setAttribute('author_id', $request->user()->id);
         }
 
 
@@ -280,9 +257,8 @@ class PostController extends Controller
         $post->slug = SlugService::createSlug($post, "slug", $postData["slug"]);
 
         if ($post->saveOrFail()) {
-            // $post->tags = $tags;
-
-
+            $post->user;
+            $post->author;
             if (!empty($postData['meta_title'])) {
                 $meta = $post->meta ? $post->meta : new PostMeta();
                 $meta->title = $postData['meta_title'];

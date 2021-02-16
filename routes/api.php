@@ -22,8 +22,8 @@ Route::group([
 ], function () {
 
     Route::get('', 'BlogController@index');
-    Route::get('tag', 'BlogController@tag');
     Route::get('page', 'BlogController@indexPages');
+    Route::get('tag', 'BlogController@tag');
     Route::get('{post:slug}', 'BlogController@show');
 });
 

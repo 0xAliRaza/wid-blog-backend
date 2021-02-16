@@ -9,17 +9,17 @@ class Post extends Model
 {
     use Sluggable;
 
-
-    protected $attributes = ['html' => null, 'custom_excerpt' => null, 'featured' => 0, 'featured_image' => null, 'published_at' => null, 'page' => false];
-
     /**
      * The attributes that should be cast to native types.
      *
      * @var array
      */
     protected $casts = [
-        'featured' => 'boolean', 'published' => 'boolean', 'page' => 'boolean'
+        'featured' => 'boolean', 'published' => 'boolean'
     ];
+
+
+    protected $attributes = ['html' => null, 'custom_excerpt' => null, 'featured' => 0, 'featured_image' => null, 'published_at' => null];
 
 
     /**
@@ -28,7 +28,7 @@ class Post extends Model
      * @var array
      */
     protected $appends = [
-        'published', 'meta_title', 'meta_description', 'first_tag'
+        'meta_title', 'meta_description', 'first_tag'
     ];
 
 
@@ -40,7 +40,7 @@ class Post extends Model
      * @var array
      */
     protected $hidden = [
-        'type', 'type_id', 'meta', 'user_id'
+        'meta', 'user_id'
     ];
 
 
@@ -66,15 +66,6 @@ class Post extends Model
 
 
 
-    /**
-     * Get the associated type model
-     *
-     * @return App\Models\Type
-     */
-    function type()
-    {
-        return $this->belongsTo('App\Models\Type');
-    }
 
     /**
      * Get the associated user model
@@ -93,12 +84,7 @@ class Post extends Model
      */
     function author()
     {
-        return $this->belongsTo('App\Models\User', 'author', 'id');
-    }
-
-    function isEmpty()
-    {
-        return empty($this->getAttribute('id'));
+        return $this->belongsTo('App\Models\User', 'author_id', 'id');
     }
 
     function tags()
@@ -111,12 +97,10 @@ class Post extends Model
         return $this->hasOne('App\Models\PostMeta');
     }
 
-
     function getFirstTagAttribute()
     {
-        return $this->tags()->oldest()->first();
+        return $this->tags()->count() > 0 ? $this->tags()->oldest()->first() : null;
     }
-
 
     function getMetaTitleAttribute()
     {
@@ -128,21 +112,17 @@ class Post extends Model
         return !empty($this->meta) ? $this->meta->description : null;
     }
 
-    function getPublishedAttribute()
-    {
-        return $this->isPublished();
-    }
-
 
     function isPublished(): bool
     {
-        return !empty($this->type->tag) && $this->type->tag === "published";
+        return $this->published;
     }
 
     function isPage(): bool
     {
-        return $this->page;
+        return $this->type === PostTypes::Page;
     }
+
 
     /**
      * Return the sluggable configuration array for this model.
