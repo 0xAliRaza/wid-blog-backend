@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Models\Tag;
 use App\Models\Post;
-use App\Models\Type;
+use App\Models\PostTypes;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Models\Tag;
 
 class BlogController extends Controller
 {
@@ -15,52 +15,40 @@ class BlogController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index()
     {
+        $where = [];
+        $where['type'] = PostTypes::Post;
+        $where['published'] = true;
 
-        $published = Type::where('tag', 'published')->first();
-        if (empty($published)) {
-            return $this->unknownErrorResponse();
-        }
-
-
-        $paginator = Post::where(['type_id' => $published->id, 'page' => false])
-            ->latest('published_at')
-            ->paginate(10);
-
-        $posts = $paginator->makeHidden(['published', 'user', 'created_at', 'updated_at', 'first_tag', 'html', 'meta_description', 'meta_title', 'page']);
-
-        foreach ($posts as $post) {
-            $post->tags = $post->tags()
-                ->oldest()
-                ->get()
-                ->makeHidden(['id', 'created_at', 'updated_at']);
-            $post->author = $post->author()->get()->makeHidden(['email', 'role', 'created_at', 'updated_at'])->first();
-        }
-
-        $paginator->data = $posts;
-
+        $paginator = Post::select('title', 'slug', 'author_id', 'published_at', 'featured', 'featured_image', 'custom_excerpt')->where($where)->latest()->paginate();
+        $paginator->data = $paginator->each(function ($post, $key) {
+            $post->author->makeHidden(['id', 'role']);
+            $post->makeHidden(['author_id', 'user']);
+            $post->first_tag ? $post->first_tag->makeHidden(['created_at', 'updated_at', 'id']) : null;
+        });
         return response()->json($paginator);
     }
-
-
     /**
-     * Display a listing of the pages.
+     * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function indexPages(Request $request)
+    public function indexPages()
     {
 
-        $published = Type::where('tag', 'published')->first();
-        if (empty($published)) {
-            return $this->unknownErrorResponse();
-        }
-        $page = Post::select('id', 'slug', 'title')->where(['type_id' => $published->id, 'page' => true])
-            ->oldest('published_at')->get()
-            ->makeHidden(['published', 'meta_title', 'meta_description', 'first_tag', 'user']);
-        return response()->json($page);
+        $where = [];
+        $where['type'] = PostTypes::Page;
+        $where['published'] = true;
+
+        $posts = Post::select('title', 'slug')->where($where)->latest()->get();
+        $posts->each(function ($post, $key) {
+            $post->makeHidden(['user', 'first_tag', 'meta_description', 'meta_title']);
+        });
+        return response()->json($posts);
     }
+
+
 
 
     /**
@@ -73,12 +61,11 @@ class BlogController extends Controller
 
     {
         if ($post->exists && $post->isPublished()) {
-            $post->makeHidden(['published', 'user', 'created_at', 'updated_at', 'first_tag']);
-            $post->tags = $post->tags()
-                ->oldest()
-                ->get()
-                ->makeHidden(['id', 'created_at', 'updated_at']);
-            $post->author = $post->author()->get()->makeHidden(['email', 'role', 'created_at', 'updated_at'])->first();
+            $post->tags->each(function ($tag) {
+                $tag->makeHidden('created_at', 'updated_at', 'id');
+            });
+            $post->author->makeHidden(['id', 'role']);
+            $post->makeHidden(['author_id', 'created_at', 'id', 'published', 'updated_at', 'user', 'first_tag']);
             return response()->json($post);
         }
         abort(404);

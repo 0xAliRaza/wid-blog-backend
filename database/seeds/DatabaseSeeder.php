@@ -23,19 +23,19 @@ class DatabaseSeeder extends Seeder
         DB::table('roles')->insert([
             [
                 'name' => 'Super Admin',
-                'tag' => 'superadmin',
+                'slug' => 'superadmin',
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'name' => 'Admin',
-                'tag' => 'admin',
+                'slug' => 'admin',
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
             [
                 'name' => 'Writer',
-                'tag' => 'writer',
+                'slug' => 'writer',
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
@@ -46,6 +46,7 @@ class DatabaseSeeder extends Seeder
             [
                 'email' => 'superadmin@gmail.com',
                 'name' => 'Ali Raza',
+                'slug' => '0xAliRaza',
                 'password' => Hash::make('alimalik'),
                 'role_id' => 1,
                 'created_at' => Carbon::now(),
@@ -54,6 +55,7 @@ class DatabaseSeeder extends Seeder
             [
                 'email' => 'admin@gmail.com',
                 'name' => 'John Doe',
+                'slug' => 'john-doe',
                 'password' => Hash::make('alimalik'),
                 'role_id' => 2,
                 'created_at' => Carbon::now(),
@@ -62,27 +64,12 @@ class DatabaseSeeder extends Seeder
             [
                 'email' => 'writer@gmail.com',
                 'name' => 'Bud Foy',
+                'slug' => 'bud-foy',
                 'password' => Hash::make('alimalik'),
                 'role_id' => 3,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()
             ],
-        ]);
-
-        // Post types
-        DB::table('types')->insert([
-            [
-                'name' => 'Published',
-                'tag' => 'published',
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now()
-            ],
-            [
-                'name' => 'Draft',
-                'tag' => 'draft',
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now()
-            ]
         ]);
 
         // Posts
