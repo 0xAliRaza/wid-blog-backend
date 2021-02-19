@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
+use Cviebrock\EloquentSluggable\Services\SlugService;
 
 class UserController extends Controller
 {
@@ -18,7 +19,7 @@ class UserController extends Controller
     public function index()
     {
         $this->authorize('index', User::class);
-        $users = User::select('id', 'name', 'email', 'created_at', 'updated_at', 'role_id')->get();
+        $users = User::all()->makeVisible(['created_at', 'updated_at', 'email']);
         return response()->json($users);
     }
 
@@ -33,15 +34,19 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:App\Models\User,email|max:255',
+            'slug' => 'required|string|unique:App\Models\User,slug|max:255',
             'password' => 'required|string|min:8|max:255',
-            'role' => 'required|string|exists:App\Models\Role,tag|max:255'
+            'role' => 'required|string|exists:App\Models\Role,slug|max:255'
         ]);
-        $role = Role::whereTag($request->role)->first();
+        $role = Role::whereSlug($request->role)->first();
         $user = new User();
         $user->name = $request->name;
         $user->email = $request->email;
         $user->password = Hash::make($request->password);
         $user->role_id = $role->id;
+
+        // Generate unique slug
+        $user->slug = SlugService::createSlug($user, "slug", $request->slug);
 
         $this->authorize('store', $user);
         if ($user->saveOrFail()) {
@@ -61,6 +66,7 @@ class UserController extends Controller
         if (!$user->exists) {
             return response()->json(["message" => "User not found."], 404);
         }
+        $user->makeVisible('email');
 
         $this->authorize('view', $user);
 
@@ -82,15 +88,18 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:App\Models\User,email,' . $user->id . '|max:255',
+            'slug' => 'required|string|unique:App\Models\User,slug,' . $user->id . '|max:255',
             'password' => 'string|min:8|max:255',
-            'role' => 'required|string|exists:App\Models\Role,tag|max:255'
+            'role' => 'required|string|exists:App\Models\Role,slug|max:255'
         ]);
 
 
-        $role = Role::whereTag($request->role)->first();
+        $role = Role::whereSlug($request->role)->first();
         $user->role = $role;
         $user->name = $request->name;
         $user->email = $request->email;
+        // Generate unique slug
+        $user->slug = SlugService::createSlug($user, "slug", $request->slug);
         if ($request->has('password')) {
             $user->password = Hash::make($request->password);
         }
