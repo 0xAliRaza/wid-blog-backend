@@ -6,12 +6,14 @@ use App\Models\Role;
 use App\Models\UserRoles;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Notifications\Notifiable;
+use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable implements JWTSubject
 {
     use Notifiable;
+    use Sluggable;
     /**
      * The attributes that are mass assignable.
      *
@@ -101,5 +103,19 @@ class User extends Authenticatable implements JWTSubject
     function isWriter(): bool
     {
         return $this->role === UserRoles::Writer;
+    }
+
+    /**
+     * Return the sluggable configuration array for this model.
+     *
+     * @return array
+     */
+    public function sluggable(): array
+    {
+        return [
+            'slug' => [
+                'source' => 'name'
+            ]
+        ];
     }
 }
