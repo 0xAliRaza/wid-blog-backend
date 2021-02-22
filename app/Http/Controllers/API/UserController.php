@@ -35,6 +35,8 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:App\Models\User,email|max:255',
             'slug' => 'required|string|unique:App\Models\User,slug|max:255',
+            'website' => 'string|url|max:255',
+            'description' => 'string|max:255',
             'password' => 'required|string|min:8|max:255',
             'role' => 'required|string|exists:App\Models\Role,slug|max:255'
         ]);
@@ -42,6 +44,12 @@ class UserController extends Controller
         $user = new User();
         $user->name = $request->name;
         $user->email = $request->email;
+        if ($request->has('website')) {
+            $user->website = $request->website;
+        }
+        if ($request->has('description')) {
+            $user->description = $request->description;
+        }
         $user->password = Hash::make($request->password);
         $user->role_id = $role->id;
 
@@ -89,6 +97,8 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:App\Models\User,email,' . $user->id . '|max:255',
             'slug' => 'required|string|unique:App\Models\User,slug,' . $user->id . '|max:255',
+            'website' => 'string|url|max:255',
+            'description' => 'string|max:255',
             'password' => 'string|min:8|max:255',
             'role' => 'required|string|exists:App\Models\Role,slug|max:255'
         ]);
@@ -96,6 +106,16 @@ class UserController extends Controller
 
         $role = Role::whereSlug($request->role)->first();
         $user->role = $role;
+        if ($request->has('website')) {
+            $user->website = $request->website;
+        } else {
+            $user->website = null;
+        }
+        if ($request->has('description')) {
+            $user->description = $request->description;
+        } else {
+            $user->description = null;
+        }
         $user->name = $request->name;
         $user->email = $request->email;
         // Generate unique slug
