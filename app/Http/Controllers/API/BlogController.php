@@ -22,11 +22,10 @@ class BlogController extends Controller
         $where['type'] = PostTypes::Post;
         $where['published'] = true;
 
-        $paginator = Post::select('title', 'slug', 'author_id', 'published_at', 'featured', 'featured_image', 'custom_excerpt')->where($where)->latest()->paginate();
-        $paginator->data = $paginator->each(function ($post, $key) {
+        $paginator = Post::select('id', 'title', 'slug', 'author_id', 'published_at', 'featured', 'featured_image', 'custom_excerpt')->where($where)->latest()->paginate();
+        $paginator->data = $paginator->map(function ($post, $key) {
             $post->author->makeHidden(['id', 'role', 'website', 'description']);
-            $post->makeHidden(['author_id', 'user']);
-            $post->first_tag ? $post->first_tag->makeHidden(['created_at', 'updated_at', 'id']) : null;
+            $post->makeHidden(['id', 'author_id', 'user']);
         });
         return response()->json($paginator);
     }
@@ -43,7 +42,7 @@ class BlogController extends Controller
         $where['published'] = true;
 
         $posts = Post::select('title', 'slug')->where($where)->latest()->get();
-        $posts->each(function ($post, $key) {
+        $posts->map(function ($post, $key) {
             $post->makeHidden(['user', 'first_tag', 'meta_description', 'meta_title']);
         });
         return response()->json($posts);
@@ -88,15 +87,38 @@ class BlogController extends Controller
         $where['published'] = true;
         $where['author_id'] = $user->id;
 
-        $posts = Post::select('title', 'slug', 'author_id', 'published_at', 'featured', 'featured_image', 'custom_excerpt')->where($where)->latest()->get();
+        $posts = Post::select('id', 'title', 'slug', 'author_id', 'published_at', 'featured', 'featured_image', 'custom_excerpt')->where($where)->latest()->get();
         $posts->map(function ($post, $key) {
             $post->author->makeHidden(['id', 'role', 'website', 'description']);
             $post->makeHidden(['author_id', 'user']);
-            $post->first_tag ? $post->first_tag->makeHidden(['created_at', 'updated_at', 'id']) : null;
         });
 
         $user->posts = $posts;
         return response()->json($user);
+    }
+
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  string  $slug
+     * @return \Illuminate\Http\Response
+     */
+    public function showTag(Tag $tag)
+
+    {
+        $tag->makeHidden(['id', 'created_at', 'updated_at']);
+
+        $where['type'] = PostTypes::Post;
+        $where['published'] = true;
+        $posts = $tag->posts()->select('posts.id', 'title', 'slug', 'author_id', 'published_at', 'featured', 'featured_image', 'custom_excerpt')->where($where)->latest()->get();
+        $posts->map(function ($post, $key) {
+            $post->author->makeHidden(['id', 'role', 'website', 'description']);
+            $post->makeHidden(['id', 'author_id', 'tag', 'pivot', 'user']);
+        });
+
+        $tag->posts = $posts;
+        return response()->json($tag);
     }
 
 

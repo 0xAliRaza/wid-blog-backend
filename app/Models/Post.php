@@ -99,7 +99,9 @@ class Post extends Model
 
     function getFirstTagAttribute()
     {
-        return $this->tags()->count() > 0 ? $this->tags()->oldest()->first() : null;
+        $firstTag = $this->tags()->oldest()->first();
+        !empty($firstTag) ? $firstTag->makeHidden(['id', 'created_at', 'updated_at']) : null;
+        return $firstTag;
     }
 
     function getMetaTitleAttribute()
