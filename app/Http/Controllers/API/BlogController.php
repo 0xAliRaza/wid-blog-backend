@@ -7,6 +7,7 @@ use App\Models\Post;
 use App\Models\PostTypes;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\User;
 
 class BlogController extends Controller
 {
@@ -23,7 +24,7 @@ class BlogController extends Controller
 
         $paginator = Post::select('title', 'slug', 'author_id', 'published_at', 'featured', 'featured_image', 'custom_excerpt')->where($where)->latest()->paginate();
         $paginator->data = $paginator->each(function ($post, $key) {
-            $post->author->makeHidden(['id', 'role']);
+            $post->author->makeHidden(['id', 'role', 'website', 'description']);
             $post->makeHidden(['author_id', 'user']);
             $post->first_tag ? $post->first_tag->makeHidden(['created_at', 'updated_at', 'id']) : null;
         });
@@ -69,6 +70,33 @@ class BlogController extends Controller
             return response()->json($post);
         }
         abort(404);
+    }
+
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  string  $slug
+     * @return \Illuminate\Http\Response
+     */
+    public function showUser(User $user)
+
+    {
+        $user->makeHidden(['id', 'role']);
+
+        $where['type'] = PostTypes::Post;
+        $where['published'] = true;
+        $where['author_id'] = $user->id;
+
+        $posts = Post::select('title', 'slug', 'author_id', 'published_at', 'featured', 'featured_image', 'custom_excerpt')->where($where)->latest()->get();
+        $posts->map(function ($post, $key) {
+            $post->author->makeHidden(['id', 'role', 'website', 'description']);
+            $post->makeHidden(['author_id', 'user']);
+            $post->first_tag ? $post->first_tag->makeHidden(['created_at', 'updated_at', 'id']) : null;
+        });
+
+        $user->posts = $posts;
+        return response()->json($user);
     }
 
 

@@ -105,6 +105,7 @@ class User extends Authenticatable implements JWTSubject
         return $this->role === UserRoles::Writer;
     }
 
+
     /**
      * Return the sluggable configuration array for this model.
      *
