@@ -58,6 +58,7 @@ class UserController extends Controller
 
         $this->authorize('store', $user);
         if ($user->saveOrFail()) {
+            $user->makeVisible(['email']);
             return response()->json($user);
         }
         return $this->unknownErrorResponse();
@@ -126,6 +127,7 @@ class UserController extends Controller
         // unset($user->to);
         $this->authorize('update', $user);
         if ($user->saveOrFail()) {
+            $user->makeVisible(['email']);
             return response()->json($user);
         }
         return $this->unknownErrorResponse();
