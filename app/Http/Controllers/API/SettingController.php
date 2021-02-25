@@ -49,7 +49,7 @@ class SettingController extends Controller
         if ($setting && $setting->exists) {
             return response()->json($setting);
         }
-        return response()->json(['message' => 'Setting not found.'], 404);
+        return response()->json([]);
     }
 
 
