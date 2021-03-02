@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\Post;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -15,5 +14,5 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome')->name('welcome');
+    return "<h1><a href='https://github.com/0xaliraza/wid-blog-backend'>Write It Down - Backend</a> is a headless CMS coded by <a href='https://0xali.com'>Ali Raza</a>.</h1>";
 });
