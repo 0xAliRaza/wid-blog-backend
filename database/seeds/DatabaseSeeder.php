@@ -19,27 +19,7 @@ class DatabaseSeeder extends Seeder
 
 
 
-        // Add dummy roles
-        DB::table('roles')->insert([
-            [
-                'name' => 'Super Admin',
-                'slug' => 'superadmin',
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now()
-            ],
-            [
-                'name' => 'Admin',
-                'slug' => 'admin',
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now()
-            ],
-            [
-                'name' => 'Writer',
-                'slug' => 'writer',
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now()
-            ],
-        ]);
+        
 
         // Add dummy users
         DB::table('users')->insert([

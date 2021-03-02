@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
 class CreateUsersTable extends Migration
 {
@@ -19,6 +19,28 @@ class CreateUsersTable extends Migration
             $table->string('slug')->unique();
             $table->timestamps();
         });
+
+        // Add user roles
+        DB::table('roles')->insert([
+            [
+                'name' => 'Super Admin',
+                'slug' => 'superadmin',
+                'created_at' => Carbon\Carbon::now(),
+                'updated_at' => Carbon\Carbon::now()
+            ],
+            [
+                'name' => 'Admin',
+                'slug' => 'admin',
+                'created_at' => Carbon\Carbon::now(),
+                'updated_at' => Carbon\Carbon::now()
+            ],
+            [
+                'name' => 'Writer',
+                'slug' => 'writer',
+                'created_at' => Carbon\Carbon::now(),
+                'updated_at' => Carbon\Carbon::now()
+            ],
+        ]);
 
         Schema::create('users', function (Blueprint $table) {
             $table->id();
