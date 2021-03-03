@@ -6,39 +6,38 @@
 	<a href="#authors">Authors</a>
 </p>
 
-
 <p align="center">
 	<a href="https://cloud.docker.com/repository/docker/0xaliraza/wid-blog-backend/builds"><img alt="Docker Build Status" src="https://img.shields.io/docker/cloud/build/0xaliraza/wid-blog-backend" />
 	</a><a href="https://cloud.docker.com/repository/docker/0xaliraza/wid-blog-backend/"><img alt="Docker Build Automation Status" src="https://img.shields.io/docker/cloud/automated/0xaliraza/wid-blog-backend" />
 	</a>
 </p>
 
-Also check out the [wid-blog-frontend](http://github.com/0xaliraza/wid-blog-frontend).
+Also, check out the [wid-blog-frontend](http://github.com/0xaliraza/wid-blog-frontend).
 
-Write It Down - Backend is a free to use headless blogging CMS built with [Laravel 7.x](https://laravel.com/). It uses [JWT](https://jwt.io) for authentication and can be consumed by any frontend.
+Write It Down - Backend is a free-to-use headless blogging CMS built with [Laravel 7.x](https://laravel.com/). It uses [JWT](https://jwt.io) for authentication and can be consumed by any frontend.
 This project was coded for the sole purpose of supporting [wid-blog-frontend](http://www.github.com/0xaliraza/wid-blog-frontend).
 
 ![wid-blog-backend preview](https://i.imgur.com/B15n7sm.png)
 
 ## About
 
-Write It Down - Backend is a headless blogging CMS which can be used by any kind of frontend be it a SPA, PWA and just simple jQuery project that utilizes AJAX. The purpose of its existence is to act as an API for [WID-Blog-Frontend](http://github.com/0xaliraza/wid-blog-frontend).
+Write It Down - Backend is a headless blogging CMS which can be used by any kind of frontend be it a SPA, PWA, and just a simple jQuery project that utilizes AJAX. The purpose of its existence is to act as an API for [WID-Blog-Frontend](http://github.com/0xaliraza/wid-blog-frontend).
 
 This project was inspired by [Ghost](http://ghost.org) and [Medium](http://medium.com) but it only includes the minimal and most necessary features.
 
 ## Features
 
--   Uses [tymon\jwt-auth](https://jwt-auth.readthedocs.io/en/docs/) for user Authentication utilizing [JSON Web Tokens](https://jwt.io) .
+-   Uses [tymon\jwt-auth](https://jwt-auth.readthedocs.io/en/docs/) for user Authentication utilizing [JSON Web Tokens](https://jwt.io).
 
 -   Role based authorization based on these three roles:
 
-	-   `superadmin`: Can do all actions such as creating a post (article), a page, adding tags, adding new users or editing existing users and changing blog settings.
+    -   `superadmin`: Can do all actions such as creating a post (article), a page, adding tags, adding new users or editing existing users and changing blog settings.
 
-	-   `admin`: Can do all the things a superadmin can do but can't create or modify existing superadmins and their posts.
+    -   `admin`: Can do all the things a superadmin can do but can't create or modify existing superadmins and their posts.
 
-	-   `editor`: Can only show their content, edit their own profile but can't modify or show or modify content of superadmins or admins.
+    -   `editor`: Can only show their content, edit their own profile but can't modify or show or modify content of superadmins or admins.
 
--   All the basic CRUD features of a headless blog which includes posts, pages, tags, meta data, users, and images.
+-   All the basic CRUD features of a headless blog including posts, pages, tags, meta-data, users, and images.
 
 ## Getting Started
 
@@ -56,7 +55,7 @@ This is the easiest and recommended way because you shall only be required to in
 
 -   [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 
--   A command line interface
+-   A command-line interface
 
 **Cloning repository:**
 
@@ -133,7 +132,7 @@ Run `docker ps` to check running docker containers.
 
 **Prerequisites:**
 
--   Basic knowledge of laravel project ofcourse.
+-   Basic knowledge of laravel.
 
 You can use [this](https://gist.github.com/hootlex/da59b91c628a6688ceb1) easy guide to setup this project locally on your machine using [Artisan](https://laravel.com/docs/8.x/artisan).
 
@@ -154,3 +153,9 @@ Feel free to contact me for any kind of help or information. Let's get connected
 -   [Medium](https://0xali.medium.com)
 
 -   [Linkedin](https://www.linkedin.com/in/ali-raza-061130202/)
+
+# To Do
+
+-   [ ] Testing
+-   [ ] Searching feature
+-   [ ] CI/CD
