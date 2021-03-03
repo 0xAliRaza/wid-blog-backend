@@ -13,7 +13,7 @@
 	</a>
 </p>
 
-Also check out the [wid-blog-backend](http://github.com/0xaliraza/wid-blog-frontend).
+Also check out the [wid-blog-frontend](http://github.com/0xaliraza/wid-blog-frontend).
 
 Write It Down - Backend is a free to use headless blogging CMS built with [Laravel 7.x](https://laravel.com/). It uses [JWT](https://jwt.io) for authentication and can be consumed by any frontend.
 This project was coded for the sole purpose of supporting [wid-blog-frontend](http://www.github.com/0xaliraza/wid-blog-frontend).
